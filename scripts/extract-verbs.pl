@@ -3,10 +3,19 @@ $B = 0;
 $" = ' ';
 
 while (<>) {
+    if (/S(?:X|\d){16}/) {
+	$pii = $&;
+	$hlno = 0;
+	next
+    }
+    if (/<HL>/) {
+	$hlno ++;
+	next
+    }
     if (/<VC>/) {
 	$B = 1;
     } elsif (m!</VC>!) {
-	print "@V\n";
+	print "$pii\t$hlno\t@V\n";
 	@V = ();
 	$B = 0;
     } elsif ($B) {
