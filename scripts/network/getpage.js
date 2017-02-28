@@ -19,7 +19,8 @@ function whenPageLoaded (data, whenFinished) {
     var x = JSON.parse (data)
     if (x ["service-error"] !== undef) {
 	process.stderr.write (x ["service-error"]["status"]["statusText"] + "\n")
-	process.exit (0)
+	whenFinished (this.piis)
+	return
     }
     var sr = x ['search-results']
     var totalResults = parseInt (sr ['opensearch:totalResults'])
