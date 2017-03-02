@@ -15,6 +15,12 @@ function queryOptions (pii, apikey, token) {
     }
 }
 
+function output (pii, hls) {
+    var sep = ' • '
+    var v = hls.join (sep).replace (/\n/g, ' ')
+    process.stdout.write (pii + "\t" + sep + v + "\n")
+}
+
 function F () {
     var myself = this
     this.piis = []
@@ -59,11 +65,13 @@ function F () {
 						 var hls = hl.map (function (x) {return x.textContent})
 						 if (hls.length === 1) 
 						     hls = hls [0].split (/\s*►\s*/).filter (function (x) {return x.length > 0})
-						 myself.HL [pii] = hls
+						 //myself.HL [pii] = hls
 						 process.stderr.write (pii + ' OK\n')
+						 output (pii, hls)
 					     } else {
-						 myself.HL [pii] = []
+						 //myself.HL [pii] = []
 						 process.stderr.write (pii + ' NOT OK\n')
+						 output (pii, [])
 					     }
 					     
 					 } else {
