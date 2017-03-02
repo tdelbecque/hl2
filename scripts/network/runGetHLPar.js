@@ -1,5 +1,4 @@
 var PII_File = process.argv [2]
-var ExcludedPiiFile = process.argv [3]
 
 var nAgents = 8
 
@@ -28,11 +27,7 @@ if (f.piis === null)
     f.setPiiListFromFile (PII_File)
 
 function whenFinished (x) {
-    Object.keys(x).forEach (function (k) {
-	var sep = ' • '
-	var v = x [k].join (sep)
-	process.stdout.write (k + "\t" + sep + v + "\n")
-    })
+    return
 }
 
 for (var i = 0; i < nAgents; i ++) 
