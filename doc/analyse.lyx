@@ -76,7 +76,7 @@ Highlights analysis
 \end_layout
 
 \begin_layout Standard
-22/02/17
+01/03/17
 \end_layout
 
 \begin_layout Standard
@@ -212,8 +212,8 @@ http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/
  The shallow parsing extracts noun phrases (tagged as NC), verb phrases
  (tagged as VC) and prepositional phrases (tagged as PC), without building
  any graph to organize these entities, but for the fact that some NC and
- VC may be embeeded in a PC.
- In any cases, the depth of the hierachy is at most 1.
+ VC may be embedded in a PC.
+ In any cases, the depth of the hierarchy is at most 1.
  Other chunks may be extracted, but that are less important for our task;
  the full set of chunk types extracted by TreeTagger is the following one:
 \end_layout
@@ -8148,7 +8148,7 @@ MARCKSL1-induced.
  The head and the tail are separated by an hyphen.
  These forms are quite interesting to extract, as they may constitute also
  a source of predicate and agents that could be used as a bootstrap set
- to mine for further agents and predictats: 
+ to mine for further agents and predicates: 
 \emph on
 NaIO4-treated
 \emph default
@@ -8258,8 +8258,8 @@ t.+/' < ../data/out/telomeres-stripped | grep "-" | cut -f 3 | perl -pe 's/-.+//
 status collapsed
 
 \begin_layout Plain Layout
-after some manual cleansing to remove copulas such at 'up, 'down', and so
- on.
+after some manual cleansing to remove particles such at 'up, 'down', and
+ so on.
 \end_layout
 
 \end_inset
