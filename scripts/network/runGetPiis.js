@@ -1,3 +1,5 @@
+#!/usr/bin/node
+
 var p = require ('./getpii')
 var fs = require ('fs')
 
@@ -6,15 +8,17 @@ var firstDateStr = process.argv [2]
 var lastDateStr = process.argv [3]
 
 var firstDate
-if (firstDateStr === undef)
+if (firstDateStr === undef) {
     firstDate = new Date ()
-else
+    firstDate.setDate (firstDate.getDate () - 1)
+} else 
     firstDate = new Date (firstDateStr)
 
 var lastDate
-if (lastDateStr === undef)
+if (lastDateStr === undef) {
     lastDate = new Date ()
-else
+    lastDate.setDate (lastDate.getDate () - 1)
+} else
     lastDate = new Date (lastDateStr)
 
 if (lastDate < firstDate) {
