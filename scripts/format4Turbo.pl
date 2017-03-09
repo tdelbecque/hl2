@@ -17,7 +17,7 @@ while (<>) {
 	next;
     }
     chomp;
-    if (my ($tok, $pos, $lemma) = /^(.+)\t(.+)\t(.+)$/) {
+    if (my ($tok, $pos, $lemma) = /^(.+?)\t(.+?)\t([^\t]+)/) {
        $pos = '-LRB-' if $pos eq '('; 
        $pos = '-RRB-' if $pos eq ')';
        $pos = '.' if $pos eq 'SENT';
