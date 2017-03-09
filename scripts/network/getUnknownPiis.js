@@ -1,46 +1,41 @@
-var fs = require ('fs')
+const fs = require ('fs')
 
-var undef
-var dirKnown = process.argv [2]
-var dirCandidates = process.argv [3]
+const dirKnown = process.argv [2]
+const dirCandidates = process.argv [3]
 
-var knownPiiDic = {}
-var nToProcess = 0
+if ((dirKnown === undefined) || (dirCandidates === undefined)) {
+    process.stderr.write ("\nusage: node " +
+			  __filename.replace (process.cwd(), '.') + 
+			  " (source dir of knowns piis up to new)" +
+			  " (source dir of new piis)\n")
+    process.exit (1)
+}
 
-function processDir (dir, callback) {
-    var fun = function (xs) {
-	var x = xs.match (/(S(?:X|\d){16})/g)
-	if (x !== null)
-	    x.forEach (callback)
-    }	    
+const println = x => process.stdout.write (x + '\n')
 
-    var files = fs.readdirSync (dir)
-    nToProcess = files.length
-    files.forEach (function (f) {
-	var fn = dir + '/' + f
-	var s = fs.createReadStream (fn, {encoding:'utf8'})
+function F (dicIn, dir) {
+    const files = fs.readdirSync (dir)
+
+    return Promise.all (files.map (f => new Promise ( (resolve, reject) => {
+	const fn = dir + '/' + f
+	const s = fs.createReadStream (fn, {encoding:'utf8'})
 	var data = ''
-	s.on ('data', function (d) {
-	    data = data + d
-	    var lines = data.split (/\r?\n/)
-	    data = lines.pop ()
-	    lines.forEach (function (l) {
-		fun (l)
-	    })
-	})
-	s.on ('end', function () {
-	    fun (data)
-	    nToProcess --
-	})
-    })
+	var dicOut = {}
+	
+	fun = l => {const xs = l.match (/(S(?:X|\d){16})/g)
+		    xs && xs.forEach (x => dicIn [x] || (dicOut [x] = 1))}
+	
+	s.on ('data',
+	      d => {const lines = (data + d).split (/\r?\n/)
+		    data = lines.pop ()
+		    lines.forEach (fun)})
+	      
+	s.on ('end', () => {fun (data); resolve (dicOut)})
+    }))).then (xs => xs.reduce ((a, b) => Object.assign (a, b), {}))
 }
 
-function toh () {
-    if (nToProcess === 0) {
-	processDir (dirCandidates,
-		    function (x) {if (! knownPiiDic [x]) process.stdout.write (x + '\n')})
-	clearInterval (ih)
-    }
-}
-processDir (dirKnown, function (x) {knownPiiDic [x] = 1})
-var ih = setInterval (toh, 0)
+F ({}, dirKnown).
+    then (dic => F (dic, dirCandidates)).
+    then (dic => Object.keys (dic).forEach (println)).
+    catch (e => process.stderr.write (e + "\n"))
+
