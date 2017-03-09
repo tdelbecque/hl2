@@ -17,6 +17,7 @@ sub openNC {
 sub openVC {
     push @HL, [2, $_[0], $node=[]];
 }
+$" = "\t";
 
 sub output0 {
     print "<HL>\n";
@@ -30,7 +31,8 @@ sub output0 {
 	    next;
 	}
 	if ($_->[0] == 3) {
-	    print "$_->[1]->[0]\t$_->[1]->[1]\t$_->[1]->[2]\n";
+#	    print "$_->[1]->[0]\t$_->[1]->[1]\t$_->[1]->[2]\n";
+	    print "@{$_->[1]}\n";
 	}
     }
     print "</HL>\n";
@@ -40,7 +42,8 @@ sub outputNode {
     my ($x) = @_;
     print "$x->[1]\n";
     for (@{$x->[2]}) {
-	print "$_->[0]\t$_->[1]\t$_->[2]\n";
+#	print "$_->[0]\t$_->[1]\t$_->[2]\n";
+	print "@$_\n";
     }
     if ($x->[0] == 1) {
 	print "</NC>\n";
