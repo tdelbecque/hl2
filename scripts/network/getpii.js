@@ -1,28 +1,5 @@
 var P = require ('./getpage')
 
-/* 
-   example:
-
-var p = require ('./getpii')
-
-d0 = new Date ()
-d0.setFullYear (2016)
-d0.setMonth (09)
-d0.setDate (01)
-
-d1 = new Date ()
-d1.setFullYear (2016)
-d1.setMonth (09)
-d1.setDate (03)
-
-var f = new p (d0,d1)
-
-f.get (function (xs) {console.log ('found = ' + xs.length)})
-
-*/
-
-var undef
-
 function formatDate (date) {
     var y = date.getFullYear()
     var m = date.getMonth () + 1
@@ -61,12 +38,12 @@ function F (firstDate, lastDate) {
     }
 
     this.testValid = function () {
-	if (myself.APIKEY === undef)
+	if (myself.APIKEY === undefined)
 	    return {
 		isValid: false,
 		errmsg: 'KG_ELSAPI_APIKEY environment variable is not defined'
 	    }
-	if (myself.APITOKEN === undef)
+	if (myself.APITOKEN === undefined)
 	    return {
 		isValid: false,
 		errmsg: 'KG_ELSAPI_TOKEN envoronment variable is not defined'
