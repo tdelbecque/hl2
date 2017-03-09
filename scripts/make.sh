@@ -1,20 +1,37 @@
-WORKDIR=$HOME/HL
-INDATADIR=$WORKDIR/data/in
-OUTDATADIR=$WORKDIR/data/out
+#!/bin/sh
 
-ORIGHLFILE=$INDATADIR/SD_PII_Highlights.tsv
+WORKDIR=$HLWORKDIR
+INDATADIR=$WORKDIR/data/in
+HLDIR=$INDATADIR/HL
+OUTDATADIR=$WORKDIR/data/out
+TURBOPARSEDDIR=$OUTDATADIR/parser
+WWWRESDIR="$OUTDATADIR/www-resources"
+
+#ORIGHLFILE=$INDATADIR/SD_PII_Highlights.tsv
+#ORIGHLFILE=$HLDIR/HL.1489035601
+ORIGHLFILE=$1
+FILTEREDHLFILE=$OUTDATADIR/filtered-hl
+ORIGHLBASENAME=$(basename $ORIGHLFILE)
 INPUT4TT=$OUTDATADIR/TT_input
 CHUNKS=$OUTDATADIR/TT-output
 CHUNKSTAGGED=$OUTDATADIR/TT-taggedchunks
+CHUNKSPRED=$OUTDATADIR/TT-taggedchunks-pred
+TELOMERESTRIPPED=$OUTDATADIR/telomeres-stripped
 INPUT4TURBO=$OUTDATADIR/input4turbo
+TURBOPARSEDFILE=$INPUT4TURBO.pred
+ARCHTURBOPARSEDFILE=$TURBOPARSEDDIR/$ORIGHLBASENAME.pred
+TURBOPARSEDTAGGEDFILE=$TURBOPARSEDFILE.tagged
 
 TTBIN=$HOME/TreeTagger/bin
 TTCMD=$HOME/TreeTagger/cmd
 TTLIB=$HOME/TreeTagger/lib
 
 CMD=$HOME/HL/scripts
-TOKENIZE=perl $CMD/tokenize.pl
-TAGCHUNKS=perl $CMD/tagchunks.pl
+TOKENIZE="perl $CMD/tokenize.pl"
+TAGCHUNKS="perl $CMD/tagchunks.pl"
+STRIPHEADING="perl $CMD/strip-heading.pl"
+STRIPTERMINATOR="perl $CMD/strip-terminators.pl"
+ADDTOKNO="perl addTokno.pl"
 
 TAGGER=${TTBIN}/tree-tagger 
 ABBR_LIST=${TTLIB}/english-abbreviations
@@ -22,10 +39,21 @@ PARFILE=${TTLIB}/english-utf8.par
 PARFILE2=${TTLIB}/english-chunker-utf8.par
 FILTER=${TTCMD}/filter-chunker-output.perl
 
-FORMAT4TURBO=perl format4Turbo.pl
+FORMAT4TURBO="perl format4Turbo.pl"
 RUNTURBOPARSER=$TURBODIR/scripts/run_parser.sh
+TAGWITHPREDICATETAGS="perl $CMD/build-predicates.pl"
 
-$TOKENIZE < $ORIGHLFILE > $INPUT4TT
+rm -f $INPUT4TT
+rm -f $CHUNKS
+rm -f $CHUNKSTAGGED
+rm -f $TELOMERESTRIPPED
+rm -f $INPUT4TURBO
+rm -f $TURBOPARSEDTAGGEDFILE
+rm -f $CHUNKSPRED
+rm -f $FILTEREDHLFILE
+
+perl -ne 'print if /^S(?:X|\d){16}\t.{10}/' < $ORIGHLFILE > $FILTEREDHLFILE
+$TOKENIZE < $FILTEREDHLFILE > $INPUT4TT
 
 $TAGGER -token -sgml -hyphen-heuristics $PARFILE $INPUT4TT |
     perl -nae 'if ($#F==0){print}else{print "$F[0]-$F[1]\n"}' |
@@ -34,22 +62,11 @@ $TAGGER -token -sgml -hyphen-heuristics $PARFILE $INPUT4TT |
     $TAGGER -token -lemma -sgml -no-unknown $PARFILE |
     perl -pe 's/\tIN\/that/\tIN/;s/\tV[BDHV]/\tVB/' > $CHUNKS
 
-$TAGCHUNKS < $CHUNKS > $CHUNKSTAGGED
-
-perl -ne 'print if /^<.+>$/' < $CHUNKS |
-    perl $CMD/simplify.pl |
-    perl -ne 's/Nn/1/g; print' |
-    perl -ne 's/Vv/2/g; print' |
-    perl -ne 's/Aa/3/g; print' |
-    perl -ne 's/Jj/4/g; print' |
-    perl -ne 's/Rr/5/g; print' |
-    perl -ne 's/Cc/6/g; print' |
-    perl -ne 's/Ii/7/g; print' |
-    perl -ne 's/Ll/8/g; print' |
-    perl -ne 's/></>\n</; print' |
-    perl -ne 's/-/ /; print' > $OUTDATADIR/simple-20161128
-
-perl $CMD/strip-terminators.pl < $CHUNKSTAGGED | perl $CMD/strip-heading.pl > $OUTDATADIR/telomeres-stripped
-
-$FORMAT4TURBO < $CHUNKS > $INPUT4TURBO
+$TAGCHUNKS < $CHUNKS | $ADDTOKNO > $CHUNKSTAGGED
+$STRIPHEADING < $CHUNKSTAGGED | $STRIPTERMINATOR > $TELOMERESTRIPPED
+$FORMAT4TURBO < $TELOMERESTRIPPED > $INPUT4TURBO
 $RUNTURBOPARSER $INPUT4TURBO
+mv $TURBOPARSEDFILE $ARCHTURBOPARSEDFILE
+$TAGWITHPREDICATETAGS < $ARCHTURBOPARSEDFILE > $TURBOPARSEDTAGGEDFILE
+perl addPredToTreeTagger.pl $TURBOPARSEDTAGGEDFILE $TELOMERESTRIPPED $CHUNKSTAGGED > $CHUNKSPRED
+perl  prepareHL4Server.pl < $CHUNKSPRED > $WWWRESDIR/$ORIGHLBASENAME.xml
