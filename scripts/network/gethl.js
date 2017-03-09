@@ -38,18 +38,19 @@ function F () {
 				     })
 				     res.on ('end', function () {
 					 var doc = new xmldom.DOMParser ().parseFromString (data)
+					 var hl
+					 var errmsg = ''
 					 if (doc !== undef) {
-					     (function () {
-						 var e = xpath.select ("/service-error", doc)
-						 if (e.length > 0) {
-						     e = xpath.select ("//statusText", doc)
-						     if (e.length > 0) 
-							 process.stderr.write (e [0].textContent)
-						     else
-							 process.stderr.write ('Service error')
+					     var e = xpath.select ("/service-error", doc)
+					     if (e.length > 0) {
+						 e = xpath.select ("//statusText", doc)
+						 if (e.length > 0)
+						     errmsg = e [0].textContent
+						 else {
+						     process.stderr.write ('Service error')
 						     process.exit ()
-						 }})()
-					     var hl = (function () {
+						 }
+					     } else hl = (function () {
 						 var e = xpath.select ("//*[local-name()='abstract' and @class='author-highlights']//*[local-name()='para']", doc)
 						 if (e.length > 0) return e
 
@@ -59,19 +60,21 @@ function F () {
 						 e = xpath.select ("//*[local-name()='abstract' and @class='graphical']//*[contains(text(),'ighlight')]/../*[local-name()='simple-para']", doc)
 						 if (e.length > 0) return e
 
-						 return undef
+						 return undefined
 					     })()
-					     if (hl !== undef) {
+					     if (hl !== undefined) {
 						 var hls = hl.map (function (x) {return x.textContent})
 						 if (hls.length === 1) 
 						     hls = hls [0].split (/\s*►\s*/).filter (function (x) {return x.length > 0})
 						 //myself.HL [pii] = hls
-						 process.stderr.write (pii + ' OK\n')
+						 process.stderr.write (`${pii}\tOK\n`)
 						 output (pii, hls)
 					     } else {
 						 //myself.HL [pii] = []
-						 process.stderr.write (pii + ' NOT OK\n')
-						 output (pii, [])
+						 process.stderr.write (`${pii}\tNOT OK`)
+						 if (errmsg === '') output (pii, [])
+						 else process.stderr.write (`\t${errmsg}`)
+						 process.stderr.write ('\n')
 					     }
 					     
 					 } else {
@@ -117,6 +120,7 @@ F.prototype.setPiiListFromFile = function (path, excluded) {
     try {
 	var x = fs.readFileSync (path).toString ()
 	this.piis = x.match (/(S(?:X|\d){16})/g)
+	if (this.piis === null) this.piis = []
     } catch (err) {
 	process.stderr.write ('Unable to read file ' + path)
 	throw err
