@@ -41,8 +41,8 @@ const browseDirectory = d => new Promise ((resolve, reject) => {
 		      (err, xs) => {
 			  try { if (err) throw (err)
 				resolve (xs.map (name => {
-				    var fullname = `${d}/${name}`
-				    var stat = fs.lstatSync (fullname)
+				    const fullname = `${d}/${name}`
+				    const stat = fs.lstatSync (fullname)
 				    if (! stat.isDirectory() && stat.isFile () && extractPiiFromPath (name))
 					return extractTermsForFile (fullname)
 				    else if (stat.isDirectory ()) {
