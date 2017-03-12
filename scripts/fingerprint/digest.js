@@ -60,16 +60,6 @@ const browseDirectory = (d, extractor=extractForPii) => new Promise ((resolve, r
 			  catch (err) {reject (err)}})}
     catch (err) {reject (err)}})
 
-const whenErr = console.error
-const whenString = console.log
-
-const digest = fun =>
-      x => { if (Array.isArray (x)) 
-	  flatten (x).forEach (digest (fun))
-	     else if (x.then === Promise.prototype.then) 
-		 x ['then'] (digest (fun)) ['catch'] (whenErr)
-	     else fun (x) }
-
 module.exports = function () {
     const myself = this
     this.dict = {}
