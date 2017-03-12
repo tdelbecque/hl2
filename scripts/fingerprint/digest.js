@@ -47,16 +47,17 @@ const browseDirectory = (d, extractor=extractForPii) => new Promise ((resolve, r
 			  try { if (err) throw (err)
 				resolve (xs.map (name => new Promise ((resolve, reject) => {
 				    const fullname = `${d}/${name}`
-				    const stat = fs.lstat (fullname,
-							   (err, stat) => {
-							       try { if (err) throw (err)
-								     if (! stat.isDirectory() && stat.isFile () && extractPiiFromPath (name))
-									 extractTermsForFile (fullname, extractor).then (resolve).catch(reject)
-								     else if (stat.isDirectory ())
-									 browseDirectory (fullname,
-											  extractor).then (ps => Promise.all (ps)).then (resolve).catch(reject)
-								     else resolve (null)}
-							       catch (err) {reject (err)}})})))}
+				    const stat = fs.lstat (
+					fullname,
+					(err, stat) => {
+					    try { if (err) throw (err)
+						  if (! stat.isDirectory() && stat.isFile () && extractPiiFromPath (name))
+						      extractTermsForFile (fullname, extractor).then (resolve).catch(reject)
+							  else if (stat.isDirectory ())
+							      browseDirectory (fullname,
+									       extractor).then (ps => Promise.all (ps)).then (resolve).catch(reject)
+										   else resolve (null)}
+					    catch (err) {reject (err)}})})))}
 			  catch (err) {reject (err)}})}
     catch (err) {reject (err)}})
 
@@ -73,5 +74,14 @@ module.exports = function () {
 			 if (! e) myself.dict [pii] = x.values
 			 else e.push (x.values)
 		       } }))
-}
 
+    this.output = () => {
+	console.log (`pii\t${Features.join ('\t')}`)
+	Object.keys (myself.dict).forEach (
+	    d => 
+		console.log (
+		    myself.dict [d].map (
+			x => `${d}\t${Features.reduce (
+			    (a, b) => a.concat ([x [b]]), []).join ('\t')}`).
+			join ('\n'))) }
+}
