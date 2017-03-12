@@ -37,7 +37,7 @@ const extractTermsForFile = (file, extractor=extractForPii) => new Promise ((res
 	} catch (err) {reject (e)}})
 
 const flatten = xs => xs.reduce ((a, b) => {
-    if (b === undefined) return a
+    if (b === undefined || b === null) return a
     return a.concat (Array.isArray (b) ? flatten (b) : [b])}, [])
 
 const browseDirectory = (d, extractor=extractForPii) => new Promise ((resolve, reject) => {
@@ -45,13 +45,18 @@ const browseDirectory = (d, extractor=extractForPii) => new Promise ((resolve, r
 		      {encoding: 'utf8'},
 		      (err, xs) => {
 			  try { if (err) throw (err)
-				resolve (xs.map (name => {
+				resolve (xs.map (name => new Promise ((resolve, reject) => {
 				    const fullname = `${d}/${name}`
-				    const stat = fs.lstatSync (fullname)
-				    if (! stat.isDirectory() && stat.isFile () && extractPiiFromPath (name))
-					return extractTermsForFile (fullname, extractor)
-				    else if (stat.isDirectory ()) {
-					return browseDirectory (fullname, extractor).then (ps => Promise.all (ps)) }}))}
+				    const stat = fs.lstat (fullname,
+							   (err, stat) => {
+							       try { if (err) throw (err)
+								     if (! stat.isDirectory() && stat.isFile () && extractPiiFromPath (name))
+									 extractTermsForFile (fullname, extractor).then (resolve).catch(reject)
+								     else if (stat.isDirectory ())
+									 browseDirectory (fullname,
+											  extractor).then (ps => Promise.all (ps)).then (resolve).catch(reject)
+								     else resolve (null)}
+							       catch (err) {reject (err)}})})))}
 			  catch (err) {reject (err)}})}
     catch (err) {reject (err)}})
 
@@ -65,26 +70,10 @@ const digest = fun =>
 		 x ['then'] (digest (fun)) ['catch'] (whenErr)
 	     else fun (x) }
 
-
-/*
-browseDirectory (process.argv [2] || '/home/thierry/HL/data/FP', extractObjectsForPii).
-    then (ps => Promise.all (ps)).
-    then (xs => flatten (xs).forEach (x => {
-	const pii = x.pii
-	if (pii) {
-	    const e = dict [pii]
-	    if (! e) dict [pii] = x.values
-	    else e.push (x.values)
-	}
-    })).
-    then (() => console.log (js.stringify (dict))).
-    ['catch'] (whenErr)
-*/
-
 module.exports = function () {
     const myself = this
     this.dict = {}
-    
+   
     this.load = (path='/home/thierry/HL/data/FP') =>
 	  browseDirectory (path, extractObjectsForPii).
 	  then (ps => Promise.all (ps)).
