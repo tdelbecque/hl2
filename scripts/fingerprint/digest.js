@@ -11,7 +11,7 @@ const getFeature = (f, e) => {
 	map (x => x.textContent).join () }
 
 const extractPiiFromPath = path => {
-    const m = path.match (/(S(?:X|\d){16})/)
+    const m = path.match (/(S(?:X|\d){16})\.xml$/)
     return m && m [1] }
 
 const extractForPii = (pii, doc, features=Features) => 
@@ -66,15 +66,14 @@ module.exports = function () {
     this.dict = {}
    
     this.load = (path='/home/thierry/HL/data/FP') =>
-	  browseDirectory (path, extractObjectsForPii).
-	  then (ps => Promise.all (ps)).
-	  then (xs => flatten (xs).forEach (x => {
-	      const pii = x.pii
-	      if (pii) { const e = myself.dict [pii]
-			 if (! e) myself.dict [pii] = x.values
-			 else e.push (x.values)
-		       } }))
-
+	browseDirectory (path, extractObjectsForPii).
+	then (ps => Promise.all (ps)).
+	then (xs => flatten (xs).forEach (x => {
+	    const pii = x.pii
+	    if (pii) { if (myself.dict [pii]) throw (`Duplicate FP for ${pii}`)
+		       myself.dict [pii] = x.values
+		     } }))
+    
     this.output = () => {
 	console.log (`pii\t${Features.join ('\t')}`)
 	Object.keys (myself.dict).forEach (
