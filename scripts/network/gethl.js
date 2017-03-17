@@ -1,9 +1,8 @@
-var https = require ('https')
-var xmldom = require ('xmldom')
-var xpath = require ('xpath')
-var fs = require ('fs')
-
-var undef
+const https = require ('https')
+const xmldom = require ('xmldom')
+const xpath = require ('xpath')
+const fs = require ('fs')
+const u = require ('../utils/utils')
 
 function queryOptions (pii, apikey, token) {
     return {
@@ -15,10 +14,15 @@ function queryOptions (pii, apikey, token) {
     }
 }
 
-function output (pii, hls) {
+function output (pii, hls, data) {
     var sep = ' • '
     var v = hls.join (sep).replace (/\n/g, ' ')
     process.stdout.write (pii + "\t" + sep + v + "\n")
+    if (data) 
+	fs.writeFile (`/home/thierry/HL/data/out/pages-xml/${pii}.xml`,
+		      data,
+		      {encodng: 'utf8'},
+		      err => {if (err) u.croak (err)})
 }
 
 function F () {
@@ -40,7 +44,7 @@ function F () {
 					 var doc = new xmldom.DOMParser ().parseFromString (data)
 					 var hl
 					 var errmsg = ''
-					 if (doc !== undef) {
+					 if (doc !== undefined) {
 					     var e = xpath.select ("/service-error", doc)
 					     if (e.length > 0) {
 						 e = xpath.select ("//statusText", doc)
@@ -68,7 +72,7 @@ function F () {
 						     hls = hls [0].split (/\s*►\s*/).filter (function (x) {return x.length > 0})
 						 //myself.HL [pii] = hls
 						 process.stderr.write (`${pii}\tOK\n`)
-						 output (pii, hls)
+						 output (pii, hls, data)
 					     } else {
 						 //myself.HL [pii] = []
 						 process.stderr.write (`${pii}\tNOT OK`)
@@ -81,7 +85,7 @@ function F () {
 					     process.stderr.write (pii + ': cannot parse.')
 					 }
 					 var nextPii = myself.piis.shift ()
-					 if (nextPii !== undef) myself.innerGet (nextPii)
+					 if (nextPii !== undefined) myself.innerGet (nextPii)
 					 else myself.whenFinished (myself.HL)
 				     })
 				 })
@@ -102,12 +106,12 @@ function F () {
     }
 
     this.testValid = function () {
-	if (myself.APIKEY === undef)
+	if (myself.APIKEY === undefined)
 	    return {
 		isValid: false,
 		errmsg: 'KG_ELSAPI_APIKEY environment variable is not defined'
 	    }
-	if (myself.APITOKEN === undef)
+	if (myself.APITOKEN === undefined)
 	    return {
 		isValid: false,
 		errmsg: 'KG_ELSAPI_TOKEN envoronment variable is not defined'
@@ -125,14 +129,14 @@ F.prototype.setPiiListFromFile = function (path, excluded) {
 	process.stderr.write ('Unable to read file ' + path)
 	throw err
     }
-    if (excluded === undef) return
+    if (excluded === undefined) return
     
     try {
 	x = fs.readFileSync (excluded).toString ()
 	var excludedPiis = x.match (/(S(?:X|\d){16})/g)
 	var excludedPiisSet = {}
 	excludedPiis.forEach (function (x) {excludedPiisSet [x] = 1})
-	this.piis = this.piis.filter (function (x) {return excludedPiisSet [x] === undef})
+	this.piis = this.piis.filter (function (x) {return excludedPiisSet [x] === undefined})
     } catch (err) {
 	process.stderr.write ('Unable to read file ' + path)
 	throw err
@@ -141,11 +145,5 @@ F.prototype.setPiiListFromFile = function (path, excluded) {
 
 module.exports = F
 
-/*
-  e = xpath.select ("//*[local-name()='abstract' and @class='graphical']//*[text()='Highlights']/../*[local-name()='simple-para']", doc)
-  if (e.length > 0) return e
-  
-  e = xpath.select ("//*[local-name()='abstract' and @class='graphical']//*[text()='Research highlights']/../*[local-name()='simple-para']", doc)
-  if (e.length > 0) return e
-*/
+
 
