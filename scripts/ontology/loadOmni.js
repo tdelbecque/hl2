@@ -1,4 +1,7 @@
 const fs = require ('fs')
+const utils = require ('../utils/utils')
+const sayOk = utils.sayOk
+const croakFail = utils.croak
 
 const mkpath = name => `${process.env.HLDATADIR}/omniscience/${name}`
 const ExpectedFieldsNb = 7
@@ -38,17 +41,38 @@ function F () {
 				       assertFieldsNb (xs, i + 1)
 				       return createObjectFor (this.fields, xs)
 				   })
-				   console.error (this.data.length)
 				   this.data.lookFor = lookFor
 				   resolve (undefined)}
 			       catch (err) {reject (err)}})}
 	catch (err) {console.error ('arg');reject (err)}})
 
-    this.test = () => this.load ().then (x => console.log ('ok'), err => console.error (err))
+    this.test = () => this.load ().then (sayOk, croakFail)
 
-    this.lookFor = (k, v) => this.data.lookFor (k, v)
+    this.lookFor = (k, v) => this.data.lookFor (k + 0 === k ? this.fields[k] : k, v)
+
+    this.lookForRelationType = (k, r) => this.lookFor ('Key UID', k).lookFor ('Relationship Type', r)
+    this.prefLabel = k => this.lookForRelationType (k, 'prefLabel')
+    this.isPreflabelFor = k => this.lookForRelationType (k, 'prefLabelFor')
+    this.moreGeneral = k => this.lookForRelationType (k, 'BT')
+    this.moreSpecific = k => this.lookForRelationType (k, 'NT')
+    this.dumpLabels = () => {
+	for (let s of f.lookFor ('Relationship Type', 'prefLabelFor').
+		 reduce ((a, b) => a.add (`${b ['Key UID']}\t${b ['Key Descriptor']}`), new Set ()))
+	    console.log (s)
+    }
+	
 }
 
 
 F.test = () => new F ().test ()
+F.help = () => {
+    console.log ('This module loads an ontology.')
+    console.log ('const m=require ("./loadOmni")')
+    console.log ('m.test () // just a run')
+    console.log ('const f = new m ()')
+    console.log ('f.load () // => a promise; TODO: take the path into account !')
+    console.log ('f.dumpLabels')
+    console.log ('')
+}
 module.exports=F
+
