@@ -7,8 +7,11 @@ const Features = ['ConceptID', 'TermID', 'TermType', 'Text', 'TextEnd', 'TextOff
 
 const getFeature = (f, e) => {
     const p = `.//*[local-name(.)='${f}']`
-    return xpath.select (p, e). 
-	map (x => x.textContent).join () }
+    const x = xpath.select (p, e). 
+	  map (x => x.textContent).
+	  join ()
+    return (f === 'TextOffset') || (f === 'TextEnd') ? parseInt(x) : x
+}
 
 const extractPiiFromPath = path => {
     const m = path.match (/(S(?:X|\d){16})\.xml$/)
