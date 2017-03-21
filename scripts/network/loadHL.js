@@ -9,7 +9,7 @@ loadMap = file => new Promise (
 
 	    record = d => {
 		if (d) {
-		    var m = d.match (/(.+)\t(.+)/)
+		    var m = d.match (/(S(?:X|\d){16}).*?\t(.+)/)
 		    if (m) hls [m[1]] = m[2]
 		}
 	    }
