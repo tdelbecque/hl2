@@ -22,22 +22,23 @@ tokenize = (l, outputFun) =>
     split (/\n/)
 
 const defaultHLFile = '../../data/in/HL/SD_PII_Highlights.tsv'
+const defaultPathToFPDir = process.env.HLDATADIR + '/FP'
 
-function F () {
+function F (pathToFPDir = defaultPathToFPDir) {
     this.JOIN = new Map ()
 
     this.set = (k, v) => this.JOIN.set (k, v)
     this.get = k => this.JOIN.get (k)
     this.entries = () => this.JOIN.entries ()
+    this.clear = () => this.JOIN.clear ()
     
     this.load = (hlfile=defaultHLFile) => new Promise ((resolve, reject) => {   
 	const f = new dm ()
-	f.load ().
+	f.load (pathToFPDir).
 	    then (() => hlm.loadMap (hlfile)).
 	    then (x => {
-		Object.keys(x).forEach (pii => {
-		    const e = f.dict [pii]
-		    if (e) this.set (pii ,[x [pii], e])})
+		Object.keys(x).forEach (pii => 
+		    this.set (pii ,[x [pii], f.dict [pii] || []]))
 		resolve (undefined)}).
 	    catch (reject)
     })
@@ -69,7 +70,7 @@ function F () {
 		const tag = tags [d]
 		const term = tag.Text
 		const postag = term.match (/s$/) ? 'NNS' : 'NN'
-		const lemma = `OmniTermID_${tag.TermID}`
+		const lemma = `OmniConceptID_${tag.ConceptID}`
 		return `${term}\t${postag}\t${lemma}`
 	    }
 	    let simplehl = slices.join ('').split (/\s*\u2022\s*/).
@@ -79,6 +80,23 @@ function F () {
 	    
 	    this.set (pii, this.get (pii).concat ([simplehl]))
 	}
+    }
+    this.output = path => {
+	const fd = path ? fs.openSync (path, 'w') : process.stdout.fd
+	const println = s => fs.writeSync (fd, s + '\n')
+	const printhl = xs => {
+	    println ('<HL>')
+	    xs.forEach (println)
+	    println ('</HL>')
+	}
+	
+	for (let [pii, [hl, tags, tokens]] of this.entries ()) {
+	    println (`<PAPER PII="${pii}">`)
+	    tokens.forEach (printhl)
+	    fs.writeSync (fd, '</PAPER>\n')
+	}
+
+	if (fd !== process.stdout.fd) fs.closeSync (fd)
     }
 }
 
