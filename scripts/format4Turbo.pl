@@ -4,7 +4,7 @@ use diagnostics;
 my $tokno;
 
 while (<>) {
-    if (/<PAPER-PII="(.+)">/) {
+    if (/<PAPER.+PII="(.+)">/) {
 	print "1\t$1\t_\tCD\tCD\t_\t_\t_\n\n";
 	next;
     }
