@@ -1,7 +1,8 @@
 const fs = require ('fs')
 const xmldom = require ('xmldom')
 const xpath = require ('xpath')
-const js = require ('./json-utils')
+const u = require ('../utils/utils')
+const async = require ('../utils/async')
 
 const Features = ['ConceptID', 'TermID', 'TermType', 'Text', 'TextEnd', 'TextOffset', 'Thesaurus']
 
@@ -22,12 +23,13 @@ const extractForPii = (pii, doc, features=Features) =>
 	  ((e, i) => `${pii}\t${i+1}\t${features.map (f => getFeature (f, e)).join ('\t')}`)
       ).join ('\n')
 
-const extractObjectsForPii = (pii, doc, features=Features) =>
+const extractObjectsForPii = (pii, doc) =>
       ({pii: pii,
-	values: xpath.select ("//*[local-name(.)='Annotation']", doc).map (
-	    (e, i) => features.reduce ((a, f) => Object.assign (a, {[f]: getFeature (f, e)}),{}))})
+	values:xpath.select ("//*[local-name(.)='Annotation']", doc).
+	map ((e, i) => Features.reduce ((a, f) => Object.assign (a, {[f]: getFeature (f, e)}),{})).
+	sort ((a,b) => (a.TextOffset - b.TextOffset) || (b.TextEnd - a.TextEnd))})
 
-const extractTermsForFile = (file, extractor=extractForPii) => new Promise ((resolve, reject) => {
+const extractTermsForFile = (file, extractor=extractObjectsForPii) => new Promise ((resolve, reject) => {
     const pii = extractPiiFromPath (file)
     if (! pii) reject (`Cannot extract pii from ${file}`)
     try { fs.readFile (file,
@@ -39,51 +41,37 @@ const extractTermsForFile = (file, extractor=extractForPii) => new Promise ((res
 			   catch (err) {reject (err) }})
 	} catch (err) {reject (e)}})
 
-const flatten = xs => xs.reduce ((a, b) => {
-    if (b === undefined || b === null) return a
-    return a.concat (Array.isArray (b) ? flatten (b) : [b])}, [])
-
-const browseDirectory = (d, extractor=extractForPii) => new Promise ((resolve, reject) => {
-    try { fs.readdir (d,
-		      {encoding: 'utf8'},
-		      (err, xs) => {
-			  try { if (err) throw (err)
-				resolve (xs.map (name => new Promise ((resolve, reject) => {
-				    const fullname = `${d}/${name}`
-				    const stat = fs.lstat (
-					fullname,
-					(err, stat) => {
-					    try { if (err) throw (err)
-						  if (! stat.isDirectory() && stat.isFile () && extractPiiFromPath (name))
-						      extractTermsForFile (fullname, extractor).then (resolve).catch(reject)
-							  else if (stat.isDirectory ())
-							      browseDirectory (fullname,
-									       extractor).then (ps => Promise.all (ps)).then (resolve).catch(reject)
-										   else resolve (null)}
-					    catch (err) {reject (err)}})})))}
-			  catch (err) {reject (err)}})}
-    catch (err) {reject (err)}})
+async function doElt (x) {
+    const s = await async.lstat (x)
+    if (s.isDirectory ()) return browseDirectory (x)
+    if (s.isFile () && extractPiiFromPath (x)) return extractTermsForFile (x)
+    return Promise.resolve (undefined)
+}
+    
+async function browseDirectory (d) {
+    return Promise.all ((await async.lsdir (d)).map (x => doElt (`${d}/${x}`)))
+}
 
 module.exports = function () {
-    const myself = this
     this.dict = {}
-   
-    this.load = (path='/home/thierry/HL/data/FP') =>
-	browseDirectory (path, extractObjectsForPii).
-	then (ps => Promise.all (ps)).
-	then (xs => flatten (xs).forEach (x => {
-	    const pii = x.pii
-	    if (pii) { if (myself.dict [pii]) throw (`Duplicate FP for ${pii}`)
-		       myself.dict [pii] = x.values
-		     } }))
-    
+
+    this.load = async function (path='/home/thierry/HL/data/FP') {
+	u.flatten ((await browseDirectory (path))).
+	    forEach (x => {
+		const pii = x.pii
+		if (pii) { if (this.dict [pii]) throw (`Duplicate FP for ${pii}`)
+			   this.dict [pii] = x.values
+			 } })}
+
     this.output = () => {
 	console.log (`pii\t${Features.join ('\t')}`)
-	Object.keys (myself.dict).forEach (
+	Object.keys (this.dict).forEach (
 	    d => 
 		console.log (
-		    myself.dict [d].map (
+		    this.dict [d].map (
 			x => `${d}\t${Features.reduce (
 			    (a, b) => a.concat ([x [b]]), []).join ('\t')}`).
 			join ('\n'))) }
 }
+
+
