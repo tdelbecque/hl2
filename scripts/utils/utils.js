@@ -1,5 +1,5 @@
-exports.say = x => console.log (x)
-exports.croak = x => console.error (x)
+exports.say = x => {console.log (x); return x}
+exports.croak = x => {console.error (x); return x}
 exports.sayOk = () => console.log ('ok')
 exports.croakFail = () => console.error ('fail')
 exports.definedOr = definedOr = (x, y) => x === undefined ? y : x
@@ -75,3 +75,9 @@ loadDictionary = (file, handler) => new Promise (
     })
 
 exports.loadDictionary = loadDictionary
+
+const flatten = xs => xs.reduce ((a, b) => {
+    if (b === undefined || b === null) return a
+    return a.concat (Array.isArray (b) ? flatten (b) : [b])}, [])
+
+exports.flatten = flatten
