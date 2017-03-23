@@ -1,13 +1,17 @@
 const hlm=require ('../network/loadHL')
 const dm = require ('./digest')
+const fs = require ('fs')
+const u = require ('../utils/utils')
 
-tokenize = (l, outputFun) =>
+const croak = u.croak
+
+tokenize = (l, outputFun) => 
     ` ${l} `.
     replace (/\s+/g, ' ').
-    replace (/\.{3}/g, '\n...\n').
+    replace (/\.{}/g, '\n...\n').
     replace (/[,;:@#\$%&!?"]/g, '\n$&\n').
-    replace (/([^.])([.])([])}>"']*\)\s*$/g, '$1\n$2$3\n').
-    replace (/[][(){}<>]/g, '\n$&\n').
+    replace (/([^.])([.])([\]\)}>"']*)\s*$/g, '$1\n$2$3\n').
+    replace (/[\]\[\(\){}<>]/g, '\n$&\n').
     replace (/--/g, '\n--\n').
     replace (/([^'])'\s+/g, "$1\n'\n").
     replace (/'([sSmMdD])\s+/g, "\n'$1\n").
@@ -18,6 +22,7 @@ tokenize = (l, outputFun) =>
     replace (/\s+$/, '').
     replace (/\s+/g, '\n').
     replace (/\n+/g, '\n').
+    replace (/\n([^a-zA-Z])(.+)(ing)\n/i, "\n$1$2$3\tVVG\n").
     replace (/FP(\d+)PF/g, (x, i) =>outputFun (i)).
     split (/\n/)
 
@@ -61,8 +66,16 @@ function F (pathToFPDir = defaultPathToFPDir) {
 		    let err = `ERROR ${pii}\t${i}: expected (${tag.Text}) found (${hl.slice (cursor, tag.TextOffset)})`
 		    throw (err)
 		}
-		if (tag.TextOffset > cursor) slices.push (hl.slice (cursor, tag.TextOffset))
-		slices.push (tag.Thesaurus.match (/^Idiom/) ? tag.Text : `FP${i}PF`)
+		if (tag.TextOffset > cursor)
+		    slices.push (hl.slice (cursor, tag.TextOffset))
+		/* 
+		   tags are ordered by incrasing TextOffset and then decreasing TextEnd 
+		   It occurs sometime that more than one tag is attributed to a given TextOffset.
+		   We cope with this situation by insuring that the current tag.TextOffset value 
+		   is not less than the current cursor value.
+		*/
+		if (tag.TextOffset >= cursor)
+		    slices.push (tag.Thesaurus.match (/^Idiom/) ? tag.Text : ` FP${i}PF `)
 		cursor = tag.TextEnd
 	    })
 	    if (hl.length > cursor) slices.push (hl.slice (cursor))
@@ -71,11 +84,14 @@ function F (pathToFPDir = defaultPathToFPDir) {
 		const term = tag.Text
 		const postag = term.match (/s$/) ? 'NNS' : 'NN'
 		const lemma = `OmniConceptID_${tag.ConceptID}`
-		return `${term}\t${postag}\t${lemma}`
+		return `${term} ${lemma}\t${postag}`
 	    }
+
 	    let simplehl = slices.join ('').split (/\s*\u2022\s*/).
 		map (x => x.trim ()).
 		filter (l => l.length > 0).
+		// make sure the ending dot, otherwise the chunker may badly behave.
+		map (l => l.match (/\.$/) ? l : `${l}.`).
 		map (l => tokenize (l, outputNthTag))
 	    
 	    this.set (pii, this.get (pii).concat ([simplehl]))
