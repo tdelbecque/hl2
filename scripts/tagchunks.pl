@@ -1,5 +1,6 @@
 use strict;
 use diagnostics;
+use warnings FATAL => 'uninitialized';
 
 my ($inPC, $inVC) = (0, 0);
 my (@t, @v, @p, @l);
