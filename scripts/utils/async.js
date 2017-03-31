@@ -1,4 +1,5 @@
 const fs = require ('fs')
+const U = require ('./utils')
 
 async function lstat (fn) {
     return new Promise ((resolve, reject) => {
@@ -22,5 +23,28 @@ async function lsdir (dn) {
 			resolve (xs)
 		    })})}
 
+async function readFile (file, options={encoding:"utf8"}) {
+    return new Promise ((resolve, reject) => {
+	const h = (err, data) => {
+	    if (err) reject (err)
+	    else resolve (data)
+	}
+	try {
+	    fs.readFile (file, options, h)
+	}
+	catch (err) {
+	    reject (err)
+	}
+    })}
+
+async function assertDirectory (path) {
+    U.assert ((await lstat (path)).isDirectory (),
+	      'not a directory : ' + path)
+
+}
+
 exports.lstat = lstat
 exports.lsdir = lsdir
+exports.readFile = readFile
+exports.assertDirectory = assertDirectory
+

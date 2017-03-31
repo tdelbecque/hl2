@@ -81,3 +81,26 @@ const flatten = xs => xs.reduce ((a, b) => {
     return a.concat (Array.isArray (b) ? flatten (b) : [b])}, [])
 
 exports.flatten = flatten
+
+exports.stringify = data =>
+    JSON.stringify (
+	data,
+	(() => {
+	    var cache = []
+	    return (key, value) => {
+		if (typeof value === 'object' && value !== null) {
+		    if (cache.indexOf(value) !== -1) return
+		    cache.push (value)
+		}
+		return value
+	    }}) (),
+	2)
+
+
+exports.assertNot = (condition, exception) => {
+    if (condition) throw exception
+}
+
+exports.assert = (condition, exception) => {
+    if (! condition) throw exception
+}
