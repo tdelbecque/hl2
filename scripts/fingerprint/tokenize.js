@@ -1,5 +1,6 @@
 const hlm=require ('../network/loadHL')
-const dm = require ('./digest')
+//const dm = require ('./digest')
+const dm = require ('./digest-delimited')
 const fs = require ('fs')
 const u = require ('../utils/utils')
 
@@ -62,22 +63,26 @@ function F (pathToFPDir = defaultPathToFPDir) {
 	    let slices = []
 	    let cursor = 0
 	    tags.forEach ((tag, i) => {
-		if (hl.slice (tag.TextOffset, tag.TextEnd) !== tag.Text) {
-		    let err = `ERROR ${pii}\t${i}: expected (${tag.Text}) found (${hl.slice (cursor, tag.TextOffset)})`
-		    throw (err)
-		}
-		if (tag.TextOffset > cursor)
-		    slices.push (hl.slice (cursor, tag.TextOffset))
-		/* 
-		   tags are ordered by incrasing TextOffset and then decreasing TextEnd 
-		   It occurs sometime that more than one tag is attributed to a given TextOffset.
-		   We cope with this situation by insuring that the current tag.TextOffset value 
-		   is not less than the current cursor value.
-		*/
-		if (tag.TextOffset >= cursor)
-		    slices.push (tag.Thesaurus.match (/^Idiom/) ? tag.Text : ` FP${i}PF `)
-		cursor = tag.TextEnd
-	    })
+		try {
+		    if (hl.slice (tag.TextOffset, tag.TextEnd) !== tag.Text) {
+			let err = `ERROR ${pii}\t${i}: expected (${tag.Text}) found (${hl.slice (tag.TextOffset, tag.TextEnd)})\n` +
+			    `cursor = ${cursor}\n` +
+			    `tag = ${JSON.stringify(tag)}\nhl = ${hl}`
+			throw (err)
+		    }
+		    if (tag.TextOffset > cursor)
+			slices.push (hl.slice (cursor, tag.TextOffset))
+		    /* 
+		       tags are ordered by incrasing TextOffset and then decreasing TextEnd 
+		       It occurs sometime that more than one tag is attributed to a given TextOffset.
+		       We cope with this situation by insuring that the current tag.TextOffset value 
+		       is not less than the current cursor value.
+		    */
+		    if (tag.TextOffset >= cursor)
+			slices.push ((tag.Thesaurus !== undefined) && tag.Thesaurus.match (/^Idiom/) ?
+				     tag.Text : ` FP${i}PF `)
+		    cursor = tag.TextEnd
+		} catch (err) {u.croak (err)} })
 	    if (hl.length > cursor) slices.push (hl.slice (cursor))
 	    let outputNthTag = d => {
 		const tag = tags [d]
