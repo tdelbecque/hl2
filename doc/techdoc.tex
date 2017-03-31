@@ -1,0 +1,343 @@
+\documentclass[a4paper,11pt]{report}
+\usepackage[utf8x]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{listings}
+\usepackage{geometry}
+\usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
+\usepackage{hyperref}
+
+\hypersetup{
+    colorlinks=true, %set true if you want colored links
+    linktoc=all,     %set to all if you want both sections and subsections linked
+    linkcolor=blue,  %choose some color if you want links to stand out
+}
+
+\geometry{margin=2cm}
+
+\lstset {
+  basicstyle=\scriptsize
+}
+\newcommand{\cs}[1]{{\bfseries \ttfamily #1}}
+\newcommand{\datadir}[1]{\cs{\$DATADIR/#1}}
+\newcommand{\arrow}[2]{#1 $\rightarrow$ #2}
+\newcommand{\fsig}[3]{\textcolor{blue}{\cs{#1::\arrow{#2}{#3}}}}
+\newcommand{\sigit}[3]{\item[\fsig{#1}{#2}{#3}]}
+\newcommand{\TODO}[1]{\begin{center}\bfseries \colorbox{yellow}{\parbox{0.9\textwidth}{TODO: #1}}\end{center}}
+\newcommand{\WARNING}[1]{\begin{center}\bfseries \colorbox{red}{\parbox{0.9\textwidth}{TODO: #1}}\end{center}}
+
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
+
+\title{Technical Documentation \& HOW-TO}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\chapter{Utilities}
+\section{External resources}
+\begin{itemize}
+\item TurboParser
+\item tree-tagger
+  \begin{itemize}
+  \item english-abbreviations
+  \item english-utf8.par
+  \item english-chunker-utf8.par
+  \item filter-chunker-output.perl
+  \end{itemize}
+\item PERL
+\item ES6/NodeJS : xpath, xmldom, http, https
+\end{itemize}
+\section{Data files organisation}
+all data files go somewhere under the data directory.
+\begin{description}
+\item[data] root directory for the data files;
+\item[data/FP] FPE output; it may be moved to data/in/FP and renamed to fingerprint to mirror the programs directories namings;
+\item[data/omniscience] Omniscience vocabulary; it may be moved to data/in/omniscience, and renamed to fingerprint to mirror the program directory namings;
+\item[data/in/HL] where all the extracted HL files go;
+\item[data/out] today temporary files just go there, though it would be cleaner to use a data/tmp subdirectory;
+\item[data/out/export] where HL generated for Rolf go;
+\item[data/out/parser] outputs of TurboParser;
+\item[data/out/predicates] this is missing today, but we should puts predicates here: now we just output predicates to the server, which is not quite enough;
+  \item[data/out/www-resources] xml fragments for the server;
+\end{description}
+
+\section{Program files organisation}
+The programs are organised in these directories:
+\begin{description}
+\item[scripts] mainly PERL programs that handle the NLP pipeline: tokenization, tagging, etc. This goes from the point where the HL are downloaded to the point where the SVO triples are extracted. There are also some programs used merely for analysis.
+\item[scripts/network] NodeJS programs to extract HL from SD site, and to create a WWW proxy server to SD, serving the triples.
+\item[scripts/fingerprint] NodeJS programs that leverage FPE outputs. In particular, tokenization taking into account FPE.
+\item[scripts/ontology] NodeJS programs to manage OmniScience vocabulary: loading and browsing utilities.
+\item[scripts/utils] NodeJS generaly helpful functions.
+\item[TurboParser/HL] contains the programs to produce files to EPFL (see the make.sh file there), but it should be deprecated in the future.
+\end{description}
+\subsection{scripts}
+\subsubsection{make.sh}
+\TODO{Use new tokenizer}
+this implements the NLP pipeline, going from an HL file to a prepared HTML-tagged fragments for the www server. Invocation is simple, for example:
+%
+\begin{lstlisting}[language=bash]
+./make.sh HL.1489640401
+\end{lstlisting}
+%
+The argument is the file to process, and it must lie in the data/in/HL directory. Several artifacts and outputs are produced. The main outputs are
+%
+\begin{itemize}
+\item a TurboParser pred file in data/out/parser;
+\item an xml file in data/out/www-resources;
+\end{itemize}
+%
+As this is an integrated procedure, we may link it to the crontabed HL fetching process.
+%
+
+\TODO{build the file for indexing by EPFL}
+%
+\subsubsection{tokenize.pl}
+Output of tokenization will look like the following:
+\begin{lstlisting}[language=XML]
+  <PAPER PII="S0001457517301008">
+  <HL>
+  Rainfall
+  increases
+  the
+  likelihood
+  of
+  single-vehicle
+  (
+  SV
+  )
+  crashes
+  on
+  mountainous
+  highways
+  .
+  </HL>
+\end{lstlisting}
+Inside each \cs{<PAPER>} element there will be as many \cs{<HL>} elements as there are HL for the paper.
+\subsubsection{tagchunks.pl}
+\subsubsection{strip-heading.pl}
+\subsubsection{strip-terminators.pl}
+\subsubsection{addTokno.pl}
+\subsubsection{format4Turbo.pl}
+\subsubsection{build-predicates.pl}
+\subsubsection{addPredToTreeTagger.pl}
+\subsubsection{prepareHL4Server.pl}
+\subsubsection{countActiveVerbs.pl}
+\subsubsection{count-vc.pl}
+\subsubsection{extract-verbs.pl}
+\subsubsection{weshowthat.pl}
+%
+% scripts/network
+%
+\subsection{scripts/network}
+\subsubsection{do.sh}
+This script is regularly called by crontab. It extract fresh HL's from SD site, as is examplified in \ref{fetchinginet}.
+
+
+\subsubsection{runGetHLPar.sh}
+\subsubsection{functional.js}
+\subsubsection{getUnknownPiis.js}
+\subsubsection{getKnownPiis.js}
+\subsubsection{getpii.js}
+\subsubsection{listPIIS.js}
+\subsubsection{runGetPiis.js}
+\subsubsection{gethl.js}
+\subsubsection{getpage.js}
+\subsubsection{loadHL.js}
+\subsubsection{runGetHL.js}
+\subsubsection{runGetHLPar.js}
+\subsubsection{server.js}
+
+\subsection{scripts/fingerprint}
+%
+\subsubsection{json-utils.js}
+This will be deprecated, use utils/utils.js instead.
+%
+\subsubsection{digest.js}
+\WARNING{This module digests FPE in xml format, one file per pii. The pii is encoded in the name of the file}
+The digest module loads all FPE outputs found in a given directory and subdirectory.
+The default directory is \datadir{FP}. The main methods are
+%
+\begin{description}
+\sigit{load}{path\_to\_directory}{Promise} loads the FPE results found in a directory, recursively, and populates the internal \cs{dict} object. The rule is that the names of the files must contain a PII (re = S(X|$\backslash$d)\{16\}) and have .xml as an extension.
+\sigit{output}{()}{()} output the loaded FPE to stdout in a tabulated format. The file is tab delimited with a header, and the column names are:
+  \begin{enumerate}
+  \item pii
+  \item ConceptID
+  \item TermID
+  \item TermType
+  \item Text
+  \item TextEnd
+  \item TextOffset
+  \item Thesaurus
+  \end{enumerate}
+\end{description}
+%
+The \cs{dict} attribute is an object where keys are the PII's, and values are arrays of FPE terms. For example:
+\begin{lstlisting}[language=java]
+  const digest = require ('./digest')
+  const f = new digest ()
+  f.load ().then (sayOk, croak)
+\end{lstlisting}
+when the promise is fulfilled, \cs{f.dict} values will be arrays of objects of the following format:
+\begin{lstlisting}[language=java]
+   { ConceptID: '212071512',
+    TermID: 'A231885',
+    TermType: 'NonPrefLabel',
+    Text: 'beneficial',
+    TextEnd: '361',
+    TextOffset: '351',
+    Thesaurus: 'OmniscienceAgriBio' }
+\end{lstlisting}
+\subsubsection{digest-delimited.js}
+\subsubsection{tokenize.js}
+This is the next tokenizer that should replace script/tokenize.pl. It leverages the output of FPE as well as the vocabulary in the following way:
+\begin{itemize}
+\item keep the FP terms as a single token;
+\item use the concept id of the term as the lemma;
+\item The Pos tag for FPE tags is either NN or NNS, according to weither or not the term is plural.
+\end{itemize}
+The synopsis for using the tokenizer is:
+\begin{lstlisting}[numbers=left, language=java]
+  // node must be run with a big amount of memory,
+  // for example
+  // node --max-old-space-size=16384
+  const m = require ('./tokenize')
+  const f = new m ()
+  f.load ().then (\_\ =>\ f.tokenize ()) 
+\end{lstlisting}
+The main methods of \cs{tokenize} are:
+%
+\begin{description}
+  \item[\cs{constructor (path\_to\_FP\_directory)}]
+  \sigit{load}{path\_to\_FP\_file}{Promise} loads FPE files (currently from a default directory), and an HL data file. When the promses are fulfilled the \cs{JOIN} internal map is populated as shown below.
+  \sigit{verify}{()}{()} output on stdout terms of FPE tagging face to face with the text fragment found in the HL. This fragment is computed from the \cs{TextOffset} and \cs{TextEnd} attributes of the FPE data.
+  \sigit{tokenize}{()}{()} tokenize the HL data and update the \cs{JOIN} internal map accordingly.
+\end{description}
+%
+The \cs{JOIN} internal map has PII's as keys. Values arrays made of :
+\begin{enumerate}
+\item the HL data
+\item the FPE data
+\item the tokenizer data
+\end{enumerate}
+%
+\subsection{scripts/ontology}
+\subsubsection{loadOmni.js}
+This load a vocabulary in a simple array.
+\begin{description}
+\item[data]
+\item[fields]
+\end{description}
+\begin{description}
+\item[load]
+\item[test]
+\item[lookFor]
+\item[lookForRelationType]
+\item[prefLabel]
+\item[isPreflabelFor]
+\item[moreGeneral]
+\item[moreSpecific]
+\item[dumpLabels]
+\end{description}
+\TODO{make the source file not by default}
+\subsubsection{loadOmniMaps.js}
+\cs{loadOmniMap} is a wrapper around \cs{loadOmni}. \cs{load} methods returns a \cs{Promise}. When loading is over, the following \cs{Map}'s are populated:
+%
+\begin{description}
+  %
+\sigit{prefLabelForMap}{UID}{\{UID, label::String\}}. For each ConceptUID (the key) retrieves the \cs{(ConceptUID, label)} of the preflabel node
+  %
+\sigit{isPrefLabelForMap}{label::String}{\{UID, for::Set[UID]\}}. For a label given as a string, retrieves the corresponding prefLabel node, and the set of concept nodes this label is a prelLabel for.
+\sigit{generalForMap}{UID}{Set[UID]}, climbs one step up the hierarchy
+\sigit{specificForMap}{UID}{Set[UID]}, climbs one step down the hierarchy.
+\end{description}
+%
+The wrapped omni vocabulary can be reached with the \cs{omni} field.
+\subsubsection{compareFPWithOmniscience.js}
+Compare concepts found in an FPE result with the concepts of an Omniscience vocabulary.
+\subsection{scripts/utils}
+\subsubsection{utils.js}
+\subsubsection{pg.js}
+\subsubsection{async.js}
+\subsubsection{fs.js}
+\section{fingerprint}
+\subsection{digest}
+This exports an object with two methods: \emph{load} and \emph{output}. \emph{output} just output on stdin the content of the retrieved FingerPrints in a tabulated format.
+\subsubsection{load}
+$o.load\ ::path\Rightarrow\ Promise$
+
+The path is to any directory; the method browses recursively this directory to find files that contain a PII in their name, and parse these files for FP content. Whenthe promise is fulfilled, the \emph{dict} member of $o$ contains the retrieved FPs:
+$dict::Map\ PII\ [FP]$
+where FP structure contains the following fields:
+\begin{itemize}
+\item ConceptID
+\item TermID
+\item TermType
+\item Text
+\item TextEnd
+\item TextOffset
+\item Thesaurus
+\end{itemize}
+
+
+\section{scripts/network}
+\subsection{loadHL}
+\subsubsection{loadMap}
+$
+loadMap\ ::\ path\rightarrow Promise 
+$
+
+When fulfilled, the Promise delivers a dictionnary $PII\Rightarrow HLset$, where $HLset$ is indeed a string of HL separatd with ``' • '''. Note that ``' • ''' is also present at the very beginning of the string, and that the value associated with a PII without HL would just be ``' • '''.
+
+An example of usage can be found in \emph{server.js}.
+
+\section{Fetching data on inet}\label{fetchinginet}
+The code related to this section is in directory \emph{scripts/network}.
+
+Fetching data is a two steps process:
+\begin{enumerate}
+\item visiting ScienceDirect with its API to get a lst of recently published papers;
+\item for each new paper, vsiting SD to extract HLs, if there is some HL in the paper.
+\end{enumerate}
+
+
+This whole process is implemented in the \emph{do.sh} little script, also displayed in the following listing:
+\lstinputlisting[numbers=left,language=bash,basicstyle=\scriptsize]{../scripts/network/do.sh}
+
+\begin{description}
+\item[line 13] is where SD is visited to get the fresh PII's. In this calling mode (that is, without any argument), the API is used to retrieve PII's of papers published yesterday; otherwise it is possible to call \emph{runGetPiis} with date range as parameters;
+\item[line 14] is where we check for the PII's that are unknown, in the sense that no HL retrieval try has ben run yet for them (otherwise the PII would appear somewhere either in the HL directory, or in the \emph{pbaccess} file computed line 12);
+\item[line 15] is where we try to extract HL for each unknown PII. Note that even thos PII's for which no HL where found are recorded in the HL directory, with an empty HL list.
+\end{description}
+
+\section{Web Server}
+It is implemented in \emph{server.js} file. 
+
+\TODO{all xml files should be used: browse a directory.}
+
+\TODO{use express framework.}
+\chapter{Tools from the NLM}
+\section{Resources}
+They are organized in the \$UMLSPATH directory:
+\begin{description}
+\item[\$UMLSPATH/2016AB] the MetaThesaurus;
+\item[\$UMLSPATH/lvg2017] the SPECIALIST lexicon tools
+\end{description}
+
+\section{SPECIALIST lexicon tools}
+Caveat: need to change \cs{gtar} to \cs{tar} in the installation script.
+
+Calling \cs{norm} can be used to normalize terms from Omniscience vocabulary and retrieve them in the \cs{MRXNS\_ENG.RRF} index. we may use \cs{lvg} to generate variants for the prefferred labels.
+
+It is possible to output all prefLabels of the vocabulary with the \cs{ontology/
+outputPrefLabels.js} program:
+\begin{lstlisting}[language=bash]
+  node outputPrefLabels.js > prefLabels.txt
+\end{lstlisting}
+and then to normalize all the preflabels:
+\begin{lstlisting}
+  norm -i:prefLabels.txt -o:prefLabels\_norm.txt
+\end{lstlisting}
+\end{document}
