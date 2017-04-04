@@ -74,23 +74,25 @@ extractToken x = m
                        return $ Tok tok lem p cl
                 _ -> Nothing
 
-doLine :: String -> State -> State
+type ExceptionState = Either MyException State
+    
+doLine :: String -> State -> ExceptionState
 doLine x StateExpectPaper 
-    | isBeginingOfPaper x = StateExpectHL (extractPii x) 1
-    | otherwise = throw $ MyException $ "Expected a paper, found " ++ x
+    | isBeginingOfPaper x = Right $ StateExpectHL (extractPii x) 1
+    | otherwise = Left $ MyException $ "Expected a paper, found " ++ x
 
 doLine x (StateExpectHL pii hlno)
-       | isBeginingOfHL x = State pii hlno ""
-       | isEndOfPaper x = StateExpectPaper
-       | otherwise = throw $ MyException $ "Expected an HL, found " ++ x
+       | isBeginingOfHL x = Right $ State pii hlno ""
+       | isEndOfPaper x = Right StateExpectPaper
+       | otherwise = Left $ MyException $ "Expected an HL, found " ++ x
 
 doLine x s @ (State pii hlno str)
        | (isBeginingOfPaper x) || (isBeginingOfHL x) || (isEndOfPaper x)
-         = throw $ MyException $ errMsg ++ x
-       | isEndOfHL x = StateEndHL pii hlno str
-       | (isBeginingOfTag x) || (isEndOfTag x) = s
+         = Left $ MyException $ errMsg ++ x
+       | isEndOfHL x = Right $ StateEndHL pii hlno str
+       | (isBeginingOfTag x) || (isEndOfTag x) = Right s
        | otherwise = case extractToken x of
-                       Nothing -> throw $ MyException $ errMsg ++ x 
+                       Nothing -> Left $ MyException $ errMsg ++ x 
                        Just t -> nextState s t
        where errMsg = "Expected a token, found "
 
@@ -107,18 +109,20 @@ escapeChar str = str''' where
     str''  = replaceElt '>' "\\\\>" str'
     str'   = replaceElt '|' "\\\\|" str
     
-nextState :: State -> Tok -> State
-nextState (State pii hlno str) t = State pii hlno str' where
-    fieldno = case cl_ t of
-                "obj" -> "3"
-                "pred" -> "2"
-                "sub" -> "1"
-                "unk" -> "1"
-                otherwise -> throw $ MyException $ "Bad field : " ++ cl_ t
-    term = escapeChar $ term_ t
-    lemma = escapeChar $ lemma_ t
-    pos = simpleShow $ pos_ t
-    str' = str ++ "<" ++ term ++ "|" ++ lemma ++ "|" ++ pos ++ "|" ++ fieldno ++ "|1>" 
+nextState :: State -> Tok -> ExceptionState
+nextState (State pii hlno str) t = do
+  fieldno <- case cl_ t of
+                "obj" -> Right "3"
+                "pred" -> Right "2"
+                "sub" -> Right "1"
+                "unk" -> Right "1"
+                otherwise -> Left $ MyException $ "Bad field : " ++ cl_ t
+  let term = escapeChar $ term_ t
+      lemma = escapeChar $ lemma_ t
+      pos = simpleShow $ pos_ t
+      str' = str ++ "<" ++ term ++ "|" ++ lemma ++ "|" ++ pos ++ "|" ++ fieldno ++ "|1>"
+  return $ State pii hlno str'
+
 
 mainLoop :: State -> Int -> IO ()
 mainLoop st lineno = do
@@ -126,7 +130,10 @@ mainLoop st lineno = do
   if eof then return ()
   else do
     l <- getLine
-    let st' = doLine l st
+    let st' = case doLine l st of
+                Right x ->  x
+                Left (MyException reason) -> throw $ MyException reason'
+                               where reason' = reason ++ " (line " ++ (show lineno) ++ ")"  
     case st' of
       StateEndHL pii hlno str -> do
                        putStrLn ((show pii) ++ "\t" ++ (show hlno) ++ "\t" ++ str)
