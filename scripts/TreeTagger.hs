@@ -1,3 +1,7 @@
+--
+-- Tagset for TreeTagger
+--
+
 module TreeTagger where
 data PoS = CC -- 	coordinating conjunction 	and, but, or, &
          | CD -- 	cardinal number 	1, three
