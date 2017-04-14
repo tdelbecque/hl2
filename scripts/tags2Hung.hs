@@ -6,11 +6,14 @@ import Control.Exception
 import TreeTagger
 import Text.Regex.PCRE
 
+-- split a list of items 'xs' at cuting points located by 'sep'
 splitOnElt :: Eq a => a -> [a] -> [[a]]
-splitOnElt sep x = foldr f [[]] x where
+splitOnElt sep xs = foldr f [[]] xs where
     f c a | c == sep = [] : a
           | True = (c : (head a)) : (tail a)
 
+-- replace all occurrences of an element 'elt' by a list 'repl'
+-- in the list 'xs'
 replaceElt :: Eq a => a -> [a] -> [a] -> [a]
 replaceElt elt repl xs = foldr f [] xs where
     f c a | c == elt = repl ++ a
