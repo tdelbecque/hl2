@@ -24,7 +24,7 @@ while (<>) {
 	next;
     }
     unless (/^<.+>$/) {
-	my ($token, $tokno, $class) = /(.+?)\t.+\t(\d+)\t(.+)$/;
+	my ($token, $pos, $lemma, $tokno, $class) = /(.+)\t(.+)\t(.+)\t(\d+)\t(.+)$/;
 	if ($class eq $previousClass) {
 	    $txt .= " $token";
 	} else {
