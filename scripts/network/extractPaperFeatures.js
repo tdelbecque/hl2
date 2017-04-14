@@ -3,7 +3,7 @@ const U = require ('../utils/utils')
 const XP = require ('xpath')
 const Parser = require ('xmldom').DOMParser
 
-const file = process.env.HLDATADIR + '/out/pages-xml/S037596011730292X.xml'
+//const file = process.env.HLDATADIR + '/out/pages-xml/S037596011730292X.xml'
 
 textContent = x => x.textContent
 select = (name, ns, doc) => XP.
@@ -36,11 +36,11 @@ async function output (x) {
     })
 }
 
-async function main () {
+async function extract (file) {
     try {
 	const data = await A.readFile (file)
 	const doc = new Parser ().parseFromString (data)
-	output ({
+	return ({
 	    PII: getPII (doc),
 	    Title: getTitle (doc),
 	    ISSN: getISSN (doc),
@@ -54,5 +54,6 @@ async function main () {
     
 }
 
-main ()
+//main = () => getPaperFeatures (file)
 
+exports.extract = extract
