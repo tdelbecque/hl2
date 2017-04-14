@@ -63,6 +63,9 @@ data PoS = CC -- 	coordinating conjunction 	and, but, or, &
          | CURCY --	currency symbol	$, £
          | OPAR --      (
          | CPAR --      )
+         | OQUOTE
+         | CQUOTE
+         | SHARP
          | PUNC 
            deriving (Show, Eq)
 
@@ -128,6 +131,9 @@ strToPos "$" = Just CURCY
 strToPos "(" = Just OPAR
 strToPos ")" = Just CPAR
 strToPos "," = Just PUNC
+strToPos "''" = Just CQUOTE
+strToPos "``" = Just OQUOTE
+strToPos "#" = Just SHARP
 strToPos _ = Nothing
 
 simpleShow :: PoS -> String
