@@ -1,3 +1,5 @@
+-- Extract the HL that have not been parsed yet
+
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE BangPatterns #-}
 
@@ -38,9 +40,9 @@ loadOne f =
             if eof then return acc
             else do
               l <- hGetLine h
-              let !acc' = case l =~ "S(?:X|\\d){16}" :: String of
+              let !acc' = case l =~ "^1\tS(?:X|\\d){16}" :: String of
                            "" -> acc
-                           x -> DS.insert (PII x) acc
+                           _:_:x -> DS.insert (PII x) acc
               loop acc'
       let x = loop DS.empty
       --y <- x
@@ -51,6 +53,24 @@ loadParsedPII :: [FilePath] -> IO SetOfPII
 loadParsedPII [] = return DS.empty
 loadParsedPII (h:t) = liftM2 DS.union (loadOne h) (loadParsedPII t)
 
+filterHL :: [String] -> SetOfPII -> IO ()
+filterHL xs piis = loop xs where
+    loop (f:t) = do
+      withFile f ReadMode $ \ h ->
+          do
+            let loopLine = do
+                   eof <- hIsEOF h
+                   when (not eof) $ do
+                             l <- hGetLine h
+                             case l =~ "^(S(?:X|\\d){16}).{10}" :: [[String]] of
+                               [] -> return ()
+                               ([_,pii]:_) -> when (DS.notMember (PII pii) piis) $ putStrLn l
+                               x -> error ("Should never occur: " ++ (show x))
+                             loopLine
+            loopLine
+      loop t
+    loop _ = return ()
+                      
 main :: IO ()
 main = do
   args <- getArgs
@@ -71,7 +91,11 @@ main = do
   filesParser <- fileList pathParserDir
   filesHL <- fileList pathHLDir
 
-  piis <- loadParsedPII filesParser
-  print $ DS.size piis
+  -- load the piis of papers that have already been parsed
+  when (length filesHL > 0) $ do
+         piis <- loadParsedPII filesParser
+         filterHL filesHL piis
+         -- print $ DS.size piis
+
   return ()
   --print $ map value piis
