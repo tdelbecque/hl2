@@ -10,7 +10,7 @@ tokenize = (l, outputFun) =>
     ` ${l} `.
     replace (/\s+/g, ' ').
     replace (/\.{}/g, '\n...\n').
-    replace (/[,;:@#\$%&!?"]/g, '\n$&\n').
+    replace (/[,;:@#\$%&!?"‘’]/g, '\n$&\n').
     replace (/([^.])([.])([\]\)}>"']*)\s*$/g, '$1\n$2$3\n').
     replace (/[\]\[\(\){}<>]/g, '\n$&\n').
     replace (/--/g, '\n--\n').
@@ -28,7 +28,7 @@ tokenize = (l, outputFun) =>
     split (/\n/)
 
 const defaultHLFile = '../../data/in/HL/SD_PII_Highlights.tsv'
-const defaultPathToFPDir = process.env.HLDATADIR + '/FP'
+const defaultPathToFPDir = dm.defaultPathToFPDir
 
 function F (pathToFPDir = defaultPathToFPDir) {
     this.JOIN = new Map ()

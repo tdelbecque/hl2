@@ -74,4 +74,4 @@ module.exports = function () {
 			join ('\n'))) }
 }
 
-
+exports.defaultPathToFPDir = defaultPathToFPDir = process.env.HLDATADIR + '/FP'

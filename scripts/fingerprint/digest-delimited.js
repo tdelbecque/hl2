@@ -53,3 +53,4 @@ class Loader {
 }
 
 module.exports = Loader
+exports.defaultHLFile = 'core'
