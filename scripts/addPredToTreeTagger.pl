@@ -12,7 +12,7 @@ my ($classes, $tokens, $toknos);
 my ($cs, $ts, $ns);
 my ($tokno, $hlno);
 
-open TURBOFILE, "<$turbofile" or die $!;
+open TURBOFILE, "<$turbofile" or die "$! $turbofile";
 
 while (<TURBOFILE>) {
     if (/PII_FOUND.+(S(?:X|\d){16})/) {
