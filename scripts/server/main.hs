@@ -59,6 +59,7 @@ data PaperLoad = PaperLoad {
       volume :: String,
       pages :: String,
       pubtime :: String,
+      journalTitle :: String,
       hl :: String
       } deriving (Eq, Show)
                
@@ -88,9 +89,10 @@ resourceFallback = notFound $ toResponse ()
 
 queryLoad :: Connection -> Pii -> IO (Maybe PaperLoad)
 queryLoad conn pii = do
+  let queryString  = "select a.issn, a.title, a.authors, a.abstract, a.volume, a.pages, a.pubtime, b.journal_title from articles a left outer join journals_title b on a.issn = b.issn  where pii = ?"
   let qpii = Only $ piiAsString pii
   let queryForHL :: IO [Only String] = query conn  "select hl from xml_hl where pii = ?" qpii
-  let queryForData :: IO [(S,S,S,S,S,S,S)] = query conn "select issn, title, authors, abstract, volume, pages, pubtime from articles where pii = ?" qpii
+  let queryForData :: IO [(S,S,S,S,S,S,S,S)] = query conn queryString qpii
 
   hl <- queryForHL
   case hl of
@@ -99,7 +101,7 @@ queryLoad conn pii = do
         do xdata <- queryForData
            case xdata of
              [] -> return Nothing
-             [(issn, title, authors, abstract, volume, pages, pubtime)] ->
+             [(issn, title, authors, abstract, volume, pages, pubtime, journalTitle)] ->
                  return $ Just $ PaperLoad {
                               pii = pii,
                               issn = issn,
@@ -109,6 +111,7 @@ queryLoad conn pii = do
                               volume = volume,
                               pages = pages,
                               pubtime = pubtime,
+                              journalTitle = journalTitle,
                               hl = hl
                     }
              _ -> error "Error"
@@ -135,7 +138,8 @@ preparePage page load =
         replaceVolume = f "__VOLUME__" (volume load) replaceAbstract
         replacePages = f "__PAGES__" (pages load) replaceVolume
         replacePubtime = f "__PUBTIME__" (pubtime load) replacePages
-    in replacePubtime
+        replaceJournal = f "__JOURNAL__" (journalTitle load) replacePubtime
+    in replaceJournal
                             
             
 getServerPartResponseForPii :: String -> Connection -> Pii -> ServerPart Response
