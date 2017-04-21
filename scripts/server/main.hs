@@ -89,7 +89,7 @@ resourceFallback = notFound $ toResponse ()
 
 queryLoad :: Connection -> Pii -> IO (Maybe PaperLoad)
 queryLoad conn pii = do
-  let queryString  = "select a.issn, a.title, a.authors, a.abstract, a.volume, a.pages, a.pubtime, b.journal_title from articles a left outer join journals_title b on a.issn = b.issn  where pii = ?"
+  let queryString  = "select a.issn, a.title, a.authors, a.abstract, a.volume, a.pages, a.pubtime, coalesce (b.journal_title, '') from articles a left outer join journals_title b on a.issn = b.issn  where pii = ?"
   let qpii = Only $ piiAsString pii
   let queryForHL :: IO [Only String] = query conn  "select hl from xml_hl where pii = ?" qpii
   let queryForData :: IO [(S,S,S,S,S,S,S,S)] = query conn queryString qpii
