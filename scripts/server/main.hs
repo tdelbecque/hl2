@@ -7,7 +7,7 @@ import System.FilePath
 import Control.Monad.IO.Class
 import System.Directory
 import System.FilePath ((</>))
-
+import System.IO (hPutStrLn, stderr)
 import Database.PostgreSQL.Simple
 import Data.ByteString (ByteString)
 
@@ -19,6 +19,8 @@ import Text.Regex.Posix
 import Data.Typeable
 import Control.Exception
 
+import Data.Time (getCurrentTime)
+    
 type S = String
 
 data MyException = MyException String
@@ -34,6 +36,12 @@ instance IsString Pii where
         f | piiPCREPatternMatch s = Pii
           | otherwise = errorNotAValidPii
 
+croak = hPutStrLn stderr
+timedCroak :: String -> IO ()
+timedCroak msg = do
+  t <- getCurrentTime
+  croak $ (show t) ++ " : " ++ msg
+        
 piiPCREPatternMatch :: String -> Bool
 piiPCREPatternMatch x = x =~ ("S(X|[0-9]){16}"::String)
 
@@ -76,7 +84,7 @@ responseFile head seg = do
     if test then
         path $ \(x :: String) -> responseFile completePath x
     else do
-      liftIO $ putStrLn $ "Unable to find : " ++ completePath
+      liftIO $ croak $ "Unable to find : " ++ completePath
       notFound $ toResponse completePath
          
 resource :: ServerPart Response
@@ -154,7 +162,7 @@ getServerPartResponseForPii page conn pii = do
 paper :: String -> Connection -> ServerPart Response
 paper page conn = do
   maybePii <- optional $ lookText "pii"
-  liftIO $ putStrLn $ show (fmap unpack maybePii)
+  liftIO $ timedCroak $ show (fmap unpack maybePii)
   case maybePii of
     Nothing -> getResponseMissingPii
     Just piiLazyStr -> response where
