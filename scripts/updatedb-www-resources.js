@@ -61,7 +61,7 @@ class Process {
 	        await this.client.query (q)
 	    }
 	}
-	if (this.canClose) this.client.close ()
+	if (this.canClose) this.client.end ()
 	this.looping = false
     }
     
