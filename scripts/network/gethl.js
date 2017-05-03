@@ -6,6 +6,7 @@ const u = require ('../utils/utils')
 
 function queryOptions (pii, apikey, token) {
     return {
+	"user-agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:51.0) Gecko/20100101 Firefox/51.0",
 	hostname: 'api.elsevier.com',
 	path:'/content/article/pii/' +
 	    pii +
