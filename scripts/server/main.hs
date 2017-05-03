@@ -9,17 +9,21 @@ import System.Directory
 import System.FilePath ((</>))
 import System.IO (hPutStrLn, stderr)
 import Database.PostgreSQL.Simple
-import Data.ByteString (ByteString)
+import Data.ByteString (ByteString, unpack)
 
 import Control.Monad
 import Control.Applicative
-import Data.Text.Lazy (unpack)
+import qualified Data.Text.Lazy as LazyText (unpack)
 
 import Text.Regex.Posix
 import Data.Typeable
 import Control.Exception
 
 import Data.Time (getCurrentTime)
+
+import Network.HTTP (simpleHTTP, getRequest, getResponseBody)
+import Network.HTTP.Types.URI (urlEncode)
+import Data.ByteString.UTF8 (toString)
     
 type S = String
 
@@ -162,26 +166,41 @@ getServerPartResponseForPii page conn pii = do
 paper :: String -> Connection -> ServerPart Response
 paper page conn = do
   maybePii <- optional $ lookText "pii"
-  liftIO $ timedCroak $ show (fmap unpack maybePii)
+  liftIO $ timedCroak $ show (fmap LazyText.unpack maybePii)
   case maybePii of
     Nothing -> getResponseMissingPii
     Just piiLazyStr -> response where
-                epii = getExceptionalPii $ unpack piiLazyStr
+                epii = getExceptionalPii $ LazyText.unpack piiLazyStr
                 response = case epii of
                              Left e -> getResponseMalFormedPii
                              Right pii -> getServerPartResponseForPii page conn pii
 
 main :: IO ()
 main = do
-  mainPaperPagePattern <- liftIO $ readFile "resources/page.html"
+  mainPaperPagePattern <- readFile "resources/page.html"
   let connectString :: ByteString = "postgres://cg:cg@localhost/cg"
-  conn <- liftIO $ connectPostgreSQL connectString
-  serve Nothing $ do
+  conn <- connectPostgreSQL connectString
+  let config = Just $ ServerConfig {
+                 port=8000,
+                 ramQuota = 10 * 10^6,
+                 diskQuota = 200 * 10^6,
+                 tmpDir = "/tmp/"
+               }
+  serve config $ do
          method [GET]
          msum [ dir "resources" $ resource,
                 dir "resources" $ resourceFallback,
                 dir "paper" $ paper mainPaperPagePattern conn,
                 dir "test" $ do
                   setHeaderM "content-type" "text/html"
-                  ok $ toResponse mainPaperPagePattern
+                  ok $ toResponse mainPaperPagePattern,
+                dir "query" $ do
+                  let queryUrl :: String = toString $ urlEncode False "q=cancer du %2Bcul"
+                  x <- liftIO $ simpleHTTP (getRequest $ "http://localhost:9000/query?" ++ queryUrl)
+                  let y = getResponseBody x
+                  contentType <- getHeaderM ("content-type")
+                  setHeaderM "content-type" "text/xml"
+                  liftIO $ putStrLn $ "contentType : " ++ show contentType
+                  z :: String <- liftIO y
+                  ok $ toResponse z
               ]
