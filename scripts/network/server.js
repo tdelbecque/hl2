@@ -46,6 +46,7 @@ function createServer (loadMap={}, port=8081) {
     function appFun (request, response) {
 	var parseUrl = url.parse (request.url)
 	//console.log (JSON.stringify (parseUrl, null, 2))
+	console.log (`PATH\t${parseUrl.path}`)
 	const pii = extractPiiFromPath (parseUrl.path)
 	opt.path = `/science/article/pii/${pii}` // + parseUrl.path
 	http.get (opt,
