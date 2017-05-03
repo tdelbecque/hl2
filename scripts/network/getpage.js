@@ -9,6 +9,10 @@ function queryOptions (dateLoaded, start, apikey, token) {
     var query = '&query=dateloaded(' + dateLoaded + ')'
     var startQuery = '&start=' + start
     return {
+	headers : {
+	    "user-agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:51.0) Gecko/20100101 Firefox/51.0"
+	},
+	"user-agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:51.0) Gecko/20100101 Firefox/51.0",
 	hostname: 'api.elsevier.com',
 	path:path + query + startQuery,
 	method: 'GET'
@@ -46,6 +50,7 @@ function whenPageLoaded (data, whenFinished) {
 
 function getPage (dateLoaded, start, whenFinished) {
     var myself = this
+    console.error (JSON.stringify (queryOptions (dateLoaded, start, this.apikey, this.token)))
     var req = https.request(queryOptions (dateLoaded, start, this.apikey, this.token),
 			    function (res)  {
 				var data = ''
@@ -56,6 +61,14 @@ function getPage (dateLoaded, start, whenFinished) {
 				    myself.whenPageLoaded (data, whenFinished)
 				})
 			    })
+
+    req.on('socket', function (socket) {
+	socket.setTimeout(60000);  
+	socket.on('timeout', function() {
+	    req.abort ()
+	    myself.innerGetPage (dateLoaded, start, whenFinished)
+	});
+    });
 
     req.on ('error', function (e) {
 	process.stderr.write (e + '\n')
