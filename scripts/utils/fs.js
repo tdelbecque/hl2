@@ -20,7 +20,7 @@ async function readLines (file, handler) {
 			  reject (err)
 		      } })
 	    s.on ('close', () =>  {
-		U.croak ('Close')
+//		U.croak ('Close')
 	    })
 	    s.on ('end',
 		  async function () {
