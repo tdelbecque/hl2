@@ -28,6 +28,9 @@ type T = (String, String, String, [String])
 newtype PII = PII String
     deriving (Show, Eq)
 
+piiToString :: PII -> String
+piiToString (PII x) = x
+            
 data State = State PII Int String
            | StateEndHL PII Int String
            | StateExpectPaper
@@ -139,7 +142,7 @@ mainLoop st lineno = do
                                where reason' = reason ++ " (line " ++ (show lineno) ++ ")"  
     case st' of
       StateEndHL pii hlno str -> do
-                       putStrLn ((show pii) ++ "\t" ++ (show hlno) ++ "\t" ++ str)
+                       putStrLn ((piiToString pii) ++ "\t" ++ (show hlno) ++ "\t" ++ str)
                        mainLoop (StateExpectHL pii (hlno + 1)) (lineno + 1)
       otherwise -> mainLoop st' (lineno + 1)
     
