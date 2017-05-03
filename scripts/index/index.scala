@@ -18,6 +18,7 @@ import org.apache.lucene.document.{Document, Field, FieldType}
 import org.apache.lucene.util.Attribute
 import org.apache.lucene.search.{TermQuery, IndexSearcher}
 import org.apache.lucene.queryparser.classic.QueryParser
+
 import scala.util.matching.Regex
 import scala.collection.mutable.ListBuffer
 
@@ -83,6 +84,7 @@ object index extends App {
     val indexDir = getDirectory (indexDirPath)
     val analyzer : Analyzer = new StandardAnalyzer;
     val config : IndexWriterConfig = new IndexWriterConfig (analyzer);
+    config.setOpenMode (IndexWriterConfig.OpenMode.CREATE)
     val w = new IndexWriter (indexDir, config)
 
     def addToIndex (pii: String, title: String, objectTokens: ListBuffer [String], verbTokens: ListBuffer [String], subjectTokens: ListBuffer [String]) {
