@@ -1,5 +1,7 @@
 import scala.language.postfixOps
 
+import collection.JavaConverters._
+
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.Statement
@@ -18,9 +20,10 @@ import org.apache.lucene.document.{Document, Field, FieldType}
 import org.apache.lucene.util.Attribute
 import org.apache.lucene.search.{TermQuery, IndexSearcher}
 import org.apache.lucene.queryparser.classic.QueryParser
+import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper
 
 import scala.util.matching.Regex
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.{ListBuffer, Map}
 
 object index extends App {
   var indexDirPath: String = null
@@ -82,7 +85,10 @@ object index extends App {
 
   def indexDB {
     val indexDir = getDirectory (indexDirPath)
-    val analyzer : Analyzer = new StandardAnalyzer;
+    val defaultAnalyzer : Analyzer = new StandardAnalyzer;
+
+    val altAnalyzers : Map [String, Analyzer] = Map ("hl" -> new HighlightAnalyzer ())
+    val analyzer = new PerFieldAnalyzerWrapper (defaultAnalyzer, altAnalyzers.asJava)
     val config : IndexWriterConfig = new IndexWriterConfig (analyzer);
     config.setOpenMode (IndexWriterConfig.OpenMode.CREATE)
     val w = new IndexWriter (indexDir, config)
