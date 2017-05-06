@@ -19,12 +19,22 @@
     margin-top: 1em;
     margin-bottom: 1em;
     padding: 1em;
-    porder: 1px;
+    border: 1px black;
+    
 }
 
 .sodad-list-paper-hls {
     margin: 1em;
 }
+
 .sodad-list-paper-title {
     font-size: 150%;
+}
+
+#sodad-div-ctls-id {
+
+}
+
+.sodad-btn-submit {
+    float: right;
 }
