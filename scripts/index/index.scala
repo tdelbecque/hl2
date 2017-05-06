@@ -26,6 +26,10 @@ import scala.util.matching.Regex
 import scala.collection.mutable.{ListBuffer, Map}
 
 object index extends App {
+  Class.forName ("org.postgresql.Driver")
+  val c: Connection = DriverManager getConnection ("jdbc:postgresql://localhost/cg",
+    "cg", "cg")
+
   var indexDirPath: String = null
 
   def getDirectory (path: String) : Directory =
@@ -47,8 +51,21 @@ object index extends App {
     }
   }
 
-  def createDocument (pii: String, title: String, objectTokens: ListBuffer [String], verbTokens: ListBuffer [String], subjectTokens: ListBuffer [String])
-  : Document = {
+  def createDocument (
+    pii: String,
+    title: String,
+    objectTokens: ListBuffer [String],
+    verbTokens: ListBuffer [String],
+    subjectTokens: ListBuffer [String]
+  ) : Document = {
+
+    val stmt: Statement = c createStatement
+    val rs: ResultSet = stmt executeQuery (s"select data allhl from parsing where pii = '$pii'")
+    var allhl : String = null
+    if (rs next) allhl = rs.getString ("allhl")
+    else assert (verbTokens.length == 0, s"Issue with $pii ${verbTokens.length} ${verbTokens(0)}")
+    rs.close ()
+
     val d = new Document
     val piiFieldType = new FieldType
     val titleFieldType = new FieldType
@@ -61,25 +78,35 @@ object index extends App {
     titleFieldType setStored true
     d add new Field ("title", title, titleFieldType)
 
+    /*
     if (objectTokens.length > 0) {
       val objectFieldType = new FieldType
-      objectFieldType setIndexOptions IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS
-      objectFieldType setStored true
+      objectFieldType setIndexOptions IndexOptions.DOCS_AND_FREQS_AND_POSITIONS
+      objectFieldType setStored false
       d add new Field ("object", objectTokens mkString (" "), objectFieldType)
     }
     if (verbTokens.length > 0) {
       val verbFieldType = new FieldType
-      verbFieldType setIndexOptions IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS
-      verbFieldType setStored true
+      verbFieldType setIndexOptions IndexOptions.DOCS_AND_FREQS_AND_POSITIONS
+      verbFieldType setStored false
       d add new Field ("verb", verbTokens mkString (" "), verbFieldType)
     }
     if (subjectTokens.length > 0) {
       val subjectFieldType = new FieldType
-      subjectFieldType setIndexOptions IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS
-      subjectFieldType setStored true
+      subjectFieldType setIndexOptions IndexOptions.DOCS_AND_FREQS_AND_POSITIONS
+      subjectFieldType setStored false
       d add new Field ("subject", subjectTokens mkString (" "), subjectFieldType)
     }
-
+     */
+    if (allhl != null) {
+      val hlFieldType = new FieldType
+      hlFieldType setIndexOptions IndexOptions.DOCS_AND_FREQS_AND_POSITIONS
+      hlFieldType setStored false
+      d add new Field ("hl", allhl, hlFieldType)
+    }
+    objectTokens.clear
+    verbTokens.clear
+    subjectTokens.clear
     d
   }
 
@@ -103,9 +130,6 @@ object index extends App {
     var hlno : Int = 0
 
     try {
-      Class.forName ("org.postgresql.Driver")
-      val c: Connection = DriverManager getConnection ("jdbc:postgresql://localhost/cg",
-        "cg", "cg")
       val stmt: Statement = c createStatement
 
       val rs: ResultSet = stmt executeQuery ("select a.pii pii, title, hlno, predicates from articles a left outer join hung_predicates b on a.pii = b.pii order by pii, hlno")
@@ -113,6 +137,7 @@ object index extends App {
       var objectTokens = ListBuffer.empty [String]
       var verbTokens = ListBuffer.empty [String]
       var subjectTokens = ListBuffer.empty [String]
+      var allHL: String = null
 
       while (rs next) {
         hlno = rs.getInt ("hlno")
