@@ -13,7 +13,7 @@ async function readLines (file, handler) {
 		      str = lines.pop ()
 		      nbLines += lines.length
 		      try {
-			  const rc = await handler.addLinesAsync (lines)
+			  const rc = await handler.addLinesAsync (lines, file)
 			  if (rc) s.close ()
 		      } catch (err) {
 			  s.close ()
@@ -26,7 +26,7 @@ async function readLines (file, handler) {
 		  async function () {
 		      if (str !== '') {
 			  nbLines ++
-			  await handler.addLinesAsync ([str])
+			  await handler.addLinesAsync ([str], file)
 		      }
 		      resolve (nbLines) })
 	} catch (err) {
