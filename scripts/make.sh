@@ -45,7 +45,7 @@ TTLIB=$HOME/TreeTagger/lib
 
 CMD=$HOME/HL/scripts
 
-NODECMD="node --max-old-space-size=16384"
+NODECMD="/usr/local/n/versions/node/7.6.0/bin/node --max-old-space-size=24596"
 TOKENIZE="perl $CMD/tokenize.pl"
 #TOKENIZECMD="$TOKENIZE < $FILTEREDHLFILE > $INPUT4TT"
 TOKENIZECMD="$NODECMD $CMD/fingerprint/runTokenize.js $FILTEREDHLFILE > $INPUT4TT"
@@ -76,7 +76,7 @@ rm -f $FILTEREDHLFILE
 perl -ne 'print if /^S(?:X|\d){16}\t.{10}/' < $ORIGHLFILE > $FILTEREDHLFILE
 eval $TOKENIZECMD
 
-tostderr PT0
+tostderr "TreeTagger"
 $TAGGER -token -sgml -hyphen-heuristics $PARFILE $INPUT4TT |
     perl -pe 's/ /__SPACE__/g' |
     perl -nae 'if ($#F==0){print}else{print "$F[0]-$F[1]\n"}' |
@@ -88,26 +88,32 @@ $TAGGER -token -sgml -hyphen-heuristics $PARFILE $INPUT4TT |
     perl -pe 's/ OmniConceptID_\d+//' |
     perl -pe 's/\tIN\/that/\tIN/;s/\tV[BDHV]/\tVB/' > $CHUNKS
 
-tostderr PT1
+tostderr "Chunks Tagging"
 $TAGCHUNKS < $CHUNKS | $ADDTOKNO > $CHUNKSTAGGED
-tostderr PT2
+tostderr "Trimming"
 $STRIPHEADING < $CHUNKSTAGGED | $STRIPTERMINATOR > $TELOMERESTRIPPED
-tostderr PT3
+tostderr "Format for Turbo"
 $FORMAT4TURBO < $TELOMERESTRIPPED > $INPUT4TURBO
-tostderr PT4
+tostderr "Dependency Analysis"
 $RUNTURBOPARSER $INPUT4TURBO
-tostderr PT5
 mv $TURBOPARSEDFILE $ARCHTURBOPARSEDFILE
-tostderr PT6
+tostderr "SVO Tagging"
 $TAGWITHPREDICATETAGS < $ARCHTURBOPARSEDFILE > $TURBOPARSEDTAGGEDFILE
 # add tagging to the file before stripping
-tostderr PT7
 perl addPredToTreeTagger.pl $TURBOPARSEDTAGGEDFILE $TELOMERESTRIPPED $CHUNKSTAGGED > $ARCHTURBOTAGGEDFILE
-tostderr PT8
+tostderr "Tag 4 Hung"
 ./tags2Hung < $ARCHTURBOTAGGEDFILE > $ARCHPRED2HUNGSFILE
-tostderr PT9
+tostderr "Create xml resources for www"
 perl  prepareHL4Server.pl < $ARCHTURBOTAGGEDFILE > $WWWRESDIR/$ORIGHLBASENAME.xml
-tostderr PTA
+tostderr "Update DB"
 $NODECMD updatedb.js
-tostderr PTB
-
+tostderr "Update DB for www resources"
+$NODECMD updatedb-www-resources.js
+tostderr "Update Data for Hung"
+$NODECMD updatedb-predicates.js
+tostderr "Update Parsing"
+$NODECMD updatedb-parser.js
+tostderr "Rebuilding the index"
+cd index
+make run
+tostderr Finished
