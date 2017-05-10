@@ -13,4 +13,13 @@ class QueryController @Inject() extends Controller {
     Console println q
     Ok (QueryHandlerHTML (q, n)).as("text/html")
   }
+
+  def querylong (title: String, hl: String, searchOnTitle: Boolean, searchOnSelectedHL: Boolean, n: Int) = Action {
+    var theTitle = if (searchOnTitle) title else ""
+    var theHL = if (searchOnSelectedHL) hl else ""
+     if ((theTitle == "") && (theHL == ""))
+      BadRequest ("All parameters are empty")
+    else
+      Ok (QueryHandlerHTML.applyLong (theTitle, theHL, n)).as("text/html")
+  }
 }
