@@ -23,7 +23,7 @@
 \newcommand{\fsig}[3]{\textcolor{blue}{\cs{#1::\arrow{#2}{#3}}}}
 \newcommand{\sigit}[3]{\item[\fsig{#1}{#2}{#3}]}
 \newcommand{\TODO}[1]{\begin{center}\bfseries \colorbox{yellow}{\parbox{0.9\textwidth}{TODO: #1}}\end{center}}
-\newcommand{\WARNING}[1]{\begin{center}\bfseries \colorbox{red}{\parbox{0.9\textwidth}{TODO: #1}}\end{center}}
+\newcommand{\WARNING}[1]{\begin{center}\bfseries \colorbox{red}{\parbox{0.9\textwidth}{WARNING: #1}}\end{center}}
 
 \setcounter{secnumdepth}{3}
 \setcounter{tocdepth}{3}
@@ -52,6 +52,7 @@
 all data files go somewhere under the data directory.
 \begin{description}
 \item[data] root directory for the data files;
+\item[data/journals] contains informations on journals (titles, category) and an sql script to get this information into a DB.
 \item[data/FP] FPE output; it may be moved to data/in/FP and renamed to fingerprint to mirror the programs directories namings;
 \item[data/omniscience] Omniscience vocabulary; it may be moved to data/in/omniscience, and renamed to fingerprint to mirror the program directory namings;
 \item[data/in/HL] where all the extracted HL files go;
@@ -71,10 +72,12 @@ The programs are organised in these directories:
 \item[scripts/ontology] NodeJS programs to manage OmniScience vocabulary: loading and browsing utilities.
 \item[scripts/utils] NodeJS generaly helpful functions.
 \item[TurboParser/HL] contains the programs to produce files to EPFL (see the make.sh file there), but it should be deprecated in the future.
+\item[sql]
+\item[nlm]
 \end{description}
 \subsection{scripts}
 \subsubsection{make.sh}
-\TODO{Use new tokenizer}
+\TODO{put the process in crontab. This means thas we must compute the diff between what is newly available and was has already been computed} 
 this implements the NLP pipeline, going from an HL file to a prepared HTML-tagged fragments for the www server. Invocation is simple, for example:
 %
 \begin{lstlisting}[language=bash]
@@ -90,10 +93,13 @@ The argument is the file to process, and it must lie in the data/in/HL directory
 %
 As this is an integrated procedure, we may link it to the crontabed HL fetching process.
 %
+\subsubsection{extractNewHL.hs}
+\cs{extractNewHL hldir paserdir}
 
-\TODO{build the file for indexing by EPFL}
+this extracts the HL from the files in \cs{hldir} for which no parsing is found in \cs{parserdir}
 %
 \subsubsection{tokenize.pl}
+\WARNING{This should be deprecated in favor of the FP aware tokenizer}
 Output of tokenization will look like the following:
 \begin{lstlisting}[language=XML]
   <PAPER PII="S0001457517301008">
@@ -116,13 +122,42 @@ Output of tokenization will look like the following:
 \end{lstlisting}
 Inside each \cs{<PAPER>} element there will be as many \cs{<HL>} elements as there are HL for the paper.
 \subsubsection{tagchunks.pl}
+TreeTagger is used also to perform a shallow analysis (chunk analysis). This process tags chunks to extract special informations such as the mode of the verbs and so on.
 \subsubsection{strip-heading.pl}
+This removes mundane headings.
 \subsubsection{strip-terminators.pl}
+This removes mundane tails.
 \subsubsection{addTokno.pl}
 \subsubsection{format4Turbo.pl}
 \subsubsection{build-predicates.pl}
 \subsubsection{addPredToTreeTagger.pl}
+\subsubsection{tags2Hungs.hs}
+This process takes a data in stdin and outputs on stdout. The data in is a file is a file as the one created by \cs{addPredToTreeTagger}. The output is suitable for indexing in Lucene as required by Hung.
 \subsubsection{prepareHL4Server.pl}
+This process uses stdin and stdout. 
+It creates the HTML elements that can go in place of the HL in the presentation page. Input file should be the one produced from addPredToTreeTagger.pl. Following is a example of output from this script:
+\begin{lstlisting}[language=HTML]
+  <div class="abstract svAbstract abstractHighlights" data-etype="ab">
+  <h4 id="absSec_1">Highlights</h4><p>
+  <dl class="listitem">
+  <dt class="label">&bull;</dt>
+  <dd><p> <span class="sub">Two polysaccharide fractions</span>
+  <span class="pred">were purified</span>
+  <span class="obj">from roots of Gentiana crassicaulis .</span></p>
+  </dd>
+  <dt class="label">&bull;</dt>
+  <dd><p> <span class="sub">These two fractions</span>
+  <span class="pred">were</span>
+  <span class="obj">pectic polysaccharides .</span></p>
+  </dd>
+  <dt class="label">&bull;</dt>
+  <dd><p> <span class="sub">These two polysaccharides</span>
+  <span class="pred">could be used</span>
+  <span class="obj">as a potential natural immunomodulator .</span></p>
+  </dd>
+  </dl>
+  </p></div>
+\end{lstlisting}
 \subsubsection{countActiveVerbs.pl}
 \subsubsection{count-vc.pl}
 \subsubsection{extract-verbs.pl}
@@ -148,7 +183,12 @@ This script is regularly called by crontab. It extract fresh HL's from SD site, 
 \subsubsection{runGetHL.js}
 \subsubsection{runGetHLPar.js}
 \subsubsection{server.js}
-
+\subsubsection{extractPaperFeatures.js}
+extract informations from a file in pages-xml.
+\TODO{FINISH IT}
+\subsubsection{extractPaperFeatures.hs}
+extract informations from a file in pages-xml. (Haskell version)
+\TODO{FINISH IT}
 \subsection{scripts/fingerprint}
 %
 \subsubsection{json-utils.js}
@@ -156,6 +196,7 @@ This will be deprecated, use utils/utils.js instead.
 %
 \subsubsection{digest.js}
 \WARNING{This module digests FPE in xml format, one file per pii. The pii is encoded in the name of the file}
+\WARNING{This may be deprecated, as it seems that FPE output are to come in delimited form. See \cs{digest-delimited} instead}
 The digest module loads all FPE outputs found in a given directory and subdirectory.
 The default directory is \datadir{FP}. The main methods are
 %
@@ -259,9 +300,51 @@ The wrapped omni vocabulary can be reached with the \cs{omni} field.
 Compare concepts found in an FPE result with the concepts of an Omniscience vocabulary.
 \subsection{scripts/utils}
 \subsubsection{utils.js}
+\begin{itemize}
+\item\cs{say = x =>}
+\item\cs{croak = x =>}
+\item\cs{sayOk = () =>}
+\item\cs{croakFail = () =>}
+\item\cs{definedOr = (x, y) =>}
+\item\cs{tabulate = (xs, field) =>}
+\item\cs{fswitch = alternatives =>}
+\item\cs{isNothing = x =>}
+\item\cs{isSomething = x =>}
+\item\cs{identity = x => x}
+\item\cs{isWeaklyTrue = x =>}
+\item\cs{firstF = (fs, x, test=isSomething) =>}
+\item\cs{firstA = (xs, f, test=isSomething) =>}
+\item\cs{loadDictionary = (file, handler) =>}
+\item\cs{flatten = xs =>}
+\item\cs{stringify = data =>}
+\item\cs{assert = (condition, exception) =>}
+\item\cs{assertNot = (condition, exception) =>}
+\end{itemize}
 \subsubsection{pg.js}
+Class with the following methods:
+\begin{itemize}
+\item\cs{constructor (connectionString)}
+\item\cs{getClient ()}
+\item\cs{async connect ()}
+\item\cs{async query (q)}
+\item\cs{end ()}
+\end{itemize}
 \subsubsection{async.js}
+\begin{itemize}
+\item \cs{async function lstat (fn)}
+\item \cs{async function lsdir (dn)} given the path to a directory returns a list of files in this directory.
+\item \cs{async function readFile (file, options={encoding:"utf8"})}
+\item \cs{async function assertDirectory (path)}
+\end{itemize}
 \subsubsection{fs.js}
+\begin{itemize}
+  \item \cs{async function readLines (file, handler)} reads a file line by line; handler must have a addLinesAsync method that will be fed with list of new lines. Return from this method determines whether reading the file should continue or not : true means ending. 
+\end{itemize}
+\subsection{script/nlm}
+Here should come the programs that leverage NLM resources. For now, there is only somethng to load the english index in memory.
+\begin{description}
+\item[loadDctionnaryDelimited] note: this is a good example showing how to use \cs{loadDictionary} function of the \cs{util} package.
+\end{description}
 \section{fingerprint}
 \subsection{digest}
 This exports an object with two methods: \emph{load} and \emph{output}. \emph{output} just output on stdin the content of the retrieved FingerPrints in a tabulated format.
