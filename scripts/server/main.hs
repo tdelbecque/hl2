@@ -181,7 +181,7 @@ main = do
   let connectString :: ByteString = "postgres://cg:cg@localhost/cg"
   conn <- connectPostgreSQL connectString
   let config = Just $ ServerConfig {
-                 port=8000,
+                 port=8001,
                  ramQuota = 10 * 10^6,
                  diskQuota = 200 * 10^6,
                  tmpDir = "/tmp/"
