@@ -1,0 +1,49 @@
+@import org.apache.lucene.search.TopDocs
+@import org.apache.lucene.document.Document
+@import org.apache.lucene.search.{IndexSearcher, Query}
+@import services.PaperLookup
+
+@(docs: TopDocs, searcher: IndexSearcher, query: Query)
+
+<div class="sodad-list">
+  @for(scoreDoc <- docs.scoreDocs) {
+    @defining(searcher.doc (scoreDoc.doc)){document =>
+    @defining(document get "pii"){pii =>
+    @defining(PaperLookup (pii)){maybePaper =>
+    <div class="sodad-list-paper">
+      <div class="sodad-list-paper-pii">@pii
+	@if(maybePaper.isDefined) {
+	@*
+	Explanation button
+	*@
+	@defining(searcher.explain(query, scoreDoc.doc)){explanation =>
+	@defining(s"sodad-explain-id-$pii"){explanationDivId =>
+	<span class="sodad-tooltip-class" onclick="flipVisibilityForId('@explanationDivId')" style="cursor: pointer;">
+	  Explain
+	  <span class="sodad-tooltiptext-class">Shows/Hides weighting scheme for this result item</span>
+	</span>
+	<div class="sodad-explanation-class" id="@explanationDivId" style="height: 0px; visibility: hidden;" data-visible="0">
+	  @Html(explanation.toHtml())
+	</div>
+	}}
+	@*
+	Paper features
+	*@
+	@defining(maybePaper.get){p =>
+	@defining("\"".r.replaceAllIn (p.title, "")){title => @*"*@
+	<div class="sodad-list-paper-title">
+	  <a href="/paper?pii=@pii" target="_blank">@title</a>
+	</div>
+	<div class="sodad-list-paper-journal">@p.journal</div>
+	<div class="sodad-list-paper-hls">@Html(p.hl)</div>
+	<div class="sodad-list-submit-div">
+	  <form action="/query">
+	    <input id="hidden_@pii" name="papertitle" type="hidden" value="@title"/>
+	    <input type="submit" value="Submit"/>
+	  </form>
+	</div>
+	}}}}
+      </div>
+    </div>
+    }}}
+</div>

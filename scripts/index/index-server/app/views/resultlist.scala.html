@@ -1,0 +1,33 @@
+@import org.apache.lucene.search.TopDocs
+@import org.apache.lucene.search.{IndexSearcher, Query}
+@(queryOnTitle: String, queryOnHL: String, docs: TopDocs, searcher: IndexSearcher, query: Query)
+
+<!doctype html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <link rel="stylesheet" title="Default Styles" href="resources/page_files/style.css" type="text/css">
+    <meta charset="utf-8">
+    <link type="text/css" rel="StyleSheet" href="resources/page_files/gadgets_extgadgetstoolbarSDArticleGadgetOverRidejquery-ui-1.css">
+    <link rel="stylesheet" href="resources/page_files/article_1704R1.css" type="text/css">
+    <link rel="stylesheet" href="resources/page_files/articleSprite_1704R1.css" type="text/css">
+    <link rel="stylesheet" href="resources/page_files/jquery-ui_1704R1.css" type="text/css">
+    <link rel="stylesheet" href="resources/styles/cg.css" type="text/css">
+    <script src="resources/js/utils.js"> </script>
+  </head>
+  <body>
+    <div class="sodad-specif-div-class">
+      @if(queryOnTitle != "") {
+        <span class="sodad-specif-lbl-class">Search on title:</span><span class="sodad-specif-value-class">@queryOnTitle</span>
+        @if(queryOnHL != "") {
+          <br/>
+        }
+      }
+      @if(queryOnHL != "") {
+	<span class="sodad-specif-lbl-class">Search on highlights:</span><span class="sodad-specif-value-class">@queryOnHL</span>
+      }
+	@resultitem(docs, searcher, query)
+    </div>
+  </body>
+</html>
+
