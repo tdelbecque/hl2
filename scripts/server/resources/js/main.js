@@ -7,7 +7,7 @@ function addForm () {
 	var f = document.createElement ("form")	
 	f.id = "hlform"
 	f.method="get"
-	f.action="/query"
+	f.action="/querylong"
 	f.target="_blank"
 	e.parentNode.replaceChild (f, e)
 	f.appendChild (e)
