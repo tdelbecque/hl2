@@ -116,4 +116,29 @@ function zip (x) {
     return ret
 }
 
+/*
+According to MDN (HTMLElement.offsetParent), an element's offsetParent 
+property will return null whenever it, or any of its parents, is hidden 
+via the display style property. 
+Just make sure that the element isn't fixed. A script to check this, 
+if you have no 'position:fixed;' elements on your page, might look like:
+*/
 
+function isHidden(e) {
+    return e.dataset.visible === "0"
+}
+
+function flipVisibilityForId (id) {
+    var e = document.getElementById (id)
+    if (e) {
+	if (isHidden (e)) {
+	    e.style.visibility='visible'
+	    e.style.height = "auto"
+	    e.dataset.visible = "1"
+	} else {
+	    e.style.visibility='hidden'
+	    e.style.height = 0
+	    e.dataset.visible = "0"
+	}
+    } else alert ("element not found : " + id)
+}
