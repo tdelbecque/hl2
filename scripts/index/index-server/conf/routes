@@ -5,6 +5,7 @@
 # An example controller showing a sample home page
 GET     /                           controllers.HomeController.index
 #GET	/count			    controllers.CountController.count
+GET	/querylong			    controllers.QueryController.querylong(papertitle: String ?= "", hl: String ?= "", search_on_title: Boolean ?= false, search_on_selected_hl: Boolean ?= false, n: Int ?= 10)
 GET	/query			    controllers.QueryController.query(papertitle: String, n: Int ?= 10)
 #POST	/query			    controllers.QueryController.query(papertitle: String, n: Int ?= 10)
 GET	/paper			    controllers.PaperController.get(pii: String ?= "S0049384816304662")
