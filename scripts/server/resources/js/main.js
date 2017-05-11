@@ -1,3 +1,4 @@
+/*
 function addForm () {
     var e = document.querySelector (".abstract.svAbstract.abstractHighlights")
     
@@ -77,7 +78,7 @@ function addForm () {
 	}
     }
 }
-
+*/
 function getHighlightsElements () {
     var xs = document.querySelectorAll (".abstract.svAbstract.abstractHighlights dd")
     return xs
@@ -103,7 +104,7 @@ function addCheckBox (ddElt, i) {
 }
 
 onLoad (function () {
-    addForm ()
+    //addForm ()
     var hls = getHighlightsElements ()
     hls.forEach (change_dtElement)
     hls.forEach (addCheckBox)
