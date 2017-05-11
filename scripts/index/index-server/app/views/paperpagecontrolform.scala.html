@@ -1,0 +1,23 @@
+@(theTitle: String, theHL: String)
+
+<form id="hlform" method="get" action="/querylong" target="_blank">
+  @Html(theHL)
+  <p id="hlExplanation">Please select the highlight that brings the more valuable information, then submit your choice with the button below.</p>
+  <div class="sodad-div-ctls-class" id="sodad-div-ctls-id">
+    <label>Search on title</label><input id="sodad-check-search-on-title-id" name="search_on_title" value="1" class="sodad-div-ctls-ctl-class" checked="checked" type="checkbox">
+    <label>Search on selected highlight</label><input id="sodad-check-search-on-selected-hl-id" name="search_on_selected_hl" value="1" class="sodad-div-ctls-ctl-class" type="checkbox">
+    <input value="Submit your selection" class="sodad-div-ctls-ctl-class sodad-btn-submit" type="submit">
+  </div>
+  <input name="papertitle" value="@theTitle" type="hidden">
+  <input id="sodad-controlform-hl-hidden-id" name="hl" value="" type="hidden">
+</form>
+<script>
+  (function () {
+    var f = document.getElementById ("hlform")
+    f.onchange = function (e) {
+      var t = e.target
+      if (t.className === "sodad-hl-radio-class" && t.checked) 
+        document.getElementById ("sodad-controlform-hl-hidden-id").value = t.parentNode.textContent
+    }
+  })()
+</script>
