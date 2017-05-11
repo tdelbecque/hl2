@@ -13,6 +13,7 @@ import org.apache.lucene.search.Explanation
 import services.{P, Paper, PaperLookup}
 
 object QueryHandlerHTML {
+  /*
   val q = '"'
   val header = """
 <head>
@@ -27,13 +28,14 @@ object QueryHandlerHTML {
 <link rel="stylesheet" href="resources/styles/cg.css" type="text/css">
 <script src="resources/js/utils.js"> </script>
 </head>"""
-
+   */
   val indexDir = "/home/thierry/tmp/index"
 
   def getDirectory (path: String) : Directory =
     FSDirectory open FileSystems.getDefault.getPath(path)
   val dr = DirectoryReader open getDirectory (indexDir)
 
+  /*
   def getPaperElement (dd: Document, searcher: IndexSearcher, query: Query, docId: Int) = {
     val d: Document = searcher.doc (docId)
     val pii = d get "pii"
@@ -68,17 +70,20 @@ object QueryHandlerHTML {
   }
 
   def getHeader = header
+   */
 
-
-  def apply (q: String, n: Int) : String = {
+  def apply (title: String, n: Int) = {
     try {
       val searcher = new IndexSearcher (dr)
       val parser = new QueryParser ("title", new StandardAnalyzer)
-      val query = parser parse q
+      val query = parser parse title
       val docs = searcher search (query, n)
+/*
       docs.scoreDocs.foldLeft (s"<html>\n${getHeader}\n<body><div class=${q}sodad-list$q>\n")(
         (acc, x) => acc + getPaperElement (searcher.doc (x.doc), searcher, query, x.doc)) + 
       s"</body></html>\n"
+ */
+      views.html.resultlist (title, "", docs, searcher, query)
     }
     finally {
     }
@@ -102,7 +107,7 @@ object QueryHandlerHTML {
     x = "\\?".r.replaceAllIn (x, "\\\\?")
     x
   }
-
+/*
   def buildSpecifDiv (title: String, hl: String) : String = {
     "<div class=\"sodad-specif-div-class\">\n" + (
       if (title != "")
@@ -132,5 +137,19 @@ object QueryHandlerHTML {
     finally {
     }
   }
-
+ */
+  def applyLong (title: String, hl: String, n: Int) = {
+    try {
+      val searcher = new IndexSearcher (dr)
+      val parser = new QueryParser ("title", new StandardAnalyzer)
+      var fullQuery : String = ""
+      if (title != "") fullQuery = s"(${escapeQuery (title)})"
+      if (hl != "") fullQuery = s"$fullQuery hl:(${escapeQuery (hl)})"
+      val query = parser parse fullQuery
+      val docs = searcher search (query, n)
+      views.html.resultlist (title, hl, docs, searcher, query)
+    }
+    finally {
+    }
+  }
 }
