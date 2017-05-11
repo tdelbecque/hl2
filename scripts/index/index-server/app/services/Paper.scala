@@ -9,6 +9,7 @@ import scala.io.Source
 import scala.util.matching.Regex
 
 object Paper {
+  /*
   val paperTemplateFile = System.getenv("HLWORKDIR") + "/scripts/server/resources/page.html"
 
   val paperTemplate = Source.
@@ -26,6 +27,16 @@ object Paper {
       page = "__PUBTIME__".r.replaceAllIn (page, x.pubtime)
       page = "__HIGHLIGHTS__".r.replaceAllIn (page, x.hl)
       return Some (page)
+    })
+  }
+}
+ */
+
+  def get (pii: String) = {
+    PaperLookup (pii).map (x => {
+      var page = views.html.paperpage (x.title, x.abstr, x.journal,
+        x.volume, x.pages, x.pubtime, x.hl)
+      page
     })
   }
 }
