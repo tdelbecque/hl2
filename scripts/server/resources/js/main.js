@@ -92,10 +92,11 @@ function change_dtElement (ddElt) {
 
 // Add a checkbox inside each dd element
 function addCheckBox (ddElt, i) {
+    var checked = i ? "" : ' checked="checked"'
     var html ='<input type="radio" id="cb_selecthl_' +
 	(i + 1) +
-    '" class="sodad-hl-radio-class">' 
-//    '" name="hlselectbtn_' + (i + 1) + '" class="sodad-hl-radio-class">' 
+    '" class="sodad-hl-radio-class"' + checked + 
+    ' name="hlselectbtn" class="sodad-hl-radio-class">' 
 
     ddElt.firstElementChild.insertAdjacentHTML ("afterbegin", html)
     
@@ -108,6 +109,11 @@ onLoad (function () {
     var hls = getHighlightsElements ()
     hls.forEach (change_dtElement)
     hls.forEach (addCheckBox)
+    document.getElementsByName ("hlselectbtn").forEach (function (e) {
+	if (e.checked) {
+	    document.getElementById ("sodad-controlform-hl-hidden-id").value = e.parentNode.textContent
+	}
+    })
 })
 
 
