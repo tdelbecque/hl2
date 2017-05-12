@@ -1,11 +1,83 @@
-@(theTitle: String, theHL: String)
+@(theTitle: String, theHL: String, searchOnTitle: Boolean, searchOnHL: Boolean, titleWeight: Double, hlWeight: Double)
 
 <form id="hlform" method="get" action="/querylong" target="_blank">
   @Html(theHL)
   <p id="hlExplanation">Please select the highlight that brings the more valuable information, then submit your choice with the button below.</p>
   <div class="sodad-div-ctls-class" id="sodad-div-ctls-id">
-    <label>Search on title</label><input id="sodad-check-search-on-title-id" name="search_on_title" value="1" class="sodad-div-ctls-ctl-class" checked="checked" type="checkbox">
-    <label>Search on selected highlight</label><input id="sodad-check-search-on-selected-hl-id" name="search_on_selected_hl" value="1" class="sodad-div-ctls-ctl-class" type="checkbox">
+    <table style="weight: 100%;">
+      <tr>
+	<td style="width: 50%;">
+	  <div id="sodad-div-ctls-title-id" style="margin: 1em;">
+	    <table>
+	      <tr>
+		<td>
+		  <input id="sodad-check-search-on-title-id" name="search_on_title" value="1" class="sodad-div-ctls-ctl-class" checked="checked" type="checkbox">
+		</td>
+		<td>
+		  <label for="sodad-check-search-on-title-id" style="margin-left: 1em;">Search on Title</label>
+		</td>
+	      </tr>
+	      <tr>
+		<td>
+		  <select id="sodad-title-weight-id" name="titleweight">
+		    <option value="1.0">1.0</option>
+		    <option value="0.9">0.9</option>
+		    <option value="0.8">0.8</option>
+		    <option value="0.7">0.7</option>
+		    <option value="0.6">0.6</option>
+		    <option value="0.5" selected="selected">0.5</option>
+		    <option value="0.4">0.4</option>
+		    <option value="0.3">0.3</option>
+		    <option value="0.2">0.2</option>
+		    <option value="0.1">0.1</option>
+		    <option value="0.0">0.0</option>
+		  </select>
+		</td>
+		<td>
+		  <label for="sodad-title-weight-id" style="margin-left: 1em;">Weight for the title</label>
+		</td>
+	      </tr>
+	    </table>
+	  </div>
+	</td>
+	<td>
+	  <div id="sodad-div-ctls-hl-id" style="margin: 1em;">
+	    <table>
+	      <tr>
+		<td>
+		  <input id="sodad-check-search-on-selected-hl-id" name="search_on_selected_hl" value="1" class="sodad-div-ctls-ctl-class" checked="checked" type="checkbox">
+		</td>
+		<td>
+		  <label for="sodad-check-search-on-selected-hl-id" style="margin-left: 1em;">Search on selected Highlight</label>
+		</td>
+	      </tr>
+	      <tr>
+		<td>
+		  <select id="sodad-hl-weight-id" name="hlweight" selected="0.5">
+		    <option value="1.0">1.0</option>
+		    <option value="0.9">0.9</option>
+		    <option value="0.8">0.8</option>
+		    <option value="0.7">0.7</option>
+		    <option value="0.6">0.6</option>
+		    <option value="0.5" selected="selected">0.5</option>
+		    <option value="0.4">0.4</option>
+		    <option value="0.3">0.3</option>
+		    <option value="0.2">0.2</option>
+		    <option value="0.1">0.1</option>
+		    <option value="0.0">0.0</option>
+		  </select>
+		</td>
+		<td>
+		  <label for="sodad-hl-weight-id"  style="margin-left: 1em;">Weight for the Highlight</label>
+		</td>
+	      </tr>
+	    </table>
+	  </div>
+	</td>
+      </tr>
+    </table>
+    <input type="checkbox" name="saveparameters" id="sodad-check-save-param-id", value="1"/>
+    <label for="sodad-check-save-param-id">Save parameters as default</label>
     <input value="Submit your selection" class="sodad-div-ctls-ctl-class sodad-btn-submit" type="submit">
   </div>
   <input name="papertitle" value="@theTitle" type="hidden">
@@ -13,11 +85,34 @@
 </form>
 <script>
   (function () {
+    var seachOnTitleCB = document.getElementById ("sodad-check-search-on-title-id")
+    var seachOnHLCB = document.getElementById ("sodad-check-search-on-selected-hl-id")
+    var titleWeightSelect = document.getElementById ("sodad-title-weight-id")
+    var hlWeightSelect = document.getElementById ("sodad-hl-weight-id")
+    
+    var cbhandler = function  (e) {
+      titleWeightSelect.disabled = !seachOnTitleCB.checked
+      hlWeightSelect.disabled = !seachOnHLCB.checked
+    }
+    seachOnTitleCB.onclick = seachOnHLCB.onclick = cbhandler
+
+    seachOnTitleCB.checked = @searchOnTitle
+    seachOnHLCB.checked = @searchOnHL
+
+    hlWeightSelect.onchange = 
+    function (evt) {titleWeightSelect.value = (1 - parseFloat (evt.target.value)).toFixed(1)}
+    hlWeightSelect.value = @{hlWeight}.toFixed(1)
+  
+    titleWeightSelect.onchange = 
+    function (evt) {hlWeightSelect.value = (1 - parseFloat (evt.target.value)).toFixed(1)}
+    titleWeightSelect.value = @{titleWeight}.toFixed(1)
+  
     var f = document.getElementById ("hlform")
     f.onchange = function (e) {
       var t = e.target
       if (t.className === "sodad-hl-radio-class" && t.checked) 
         document.getElementById ("sodad-controlform-hl-hidden-id").value = t.parentNode.textContent
     }
+    cbhandler()
   })()
 </script>
