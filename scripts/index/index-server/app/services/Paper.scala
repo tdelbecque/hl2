@@ -32,10 +32,16 @@ object Paper {
 }
  */
 
-  def get (pii: String) = {
+  def get (
+    pii: String,
+    searchOnTitle: Boolean, searchOnHL: Boolean,
+    titleWeight: Double, hlWeight: Double
+  ) = {
     PaperLookup (pii).map (x => {
       var page = views.html.paperpage (x.title, x.abstr, x.journal,
-        x.volume, x.pages, x.pubtime, x.hl)
+        x.volume, x.pages, x.pubtime, x.hl,
+        searchOnTitle, searchOnHL, titleWeight, hlWeight
+      )
       page
     })
   }
