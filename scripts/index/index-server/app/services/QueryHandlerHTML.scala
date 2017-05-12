@@ -138,13 +138,17 @@ object QueryHandlerHTML {
     }
   }
  */
-  def applyLong (title: String, hl: String, n: Int) = {
+  def applyLong (
+    title: String, hl: String,
+    titleWeight: Double, hlWeight: Double,
+    n: Int) = {
     try {
       val searcher = new IndexSearcher (dr)
       val parser = new QueryParser ("title", new StandardAnalyzer)
       var fullQuery : String = ""
-      if (title != "") fullQuery = s"(${escapeQuery (title)})"
-      if (hl != "") fullQuery = s"$fullQuery hl:(${escapeQuery (hl)})"
+      if (title != "") fullQuery = s"(${escapeQuery (title)})^${titleWeight.toString}"
+      if (hl != "") fullQuery = s"$fullQuery hl:(${escapeQuery (hl)})^${hlWeight.toString}"
+
       val query = parser parse fullQuery
       val docs = searcher search (query, n)
       views.html.resultlist (title, hl, docs, searcher, query)
