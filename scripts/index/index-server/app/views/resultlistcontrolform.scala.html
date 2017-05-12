@@ -1,0 +1,101 @@
+@(theTitle: String, theHL: String, searchOnTitle: Boolean, searchOnHL: Boolean, titleWeight: Double, hlWeight: Double)
+
+<div class="sodad-specif-div-class">
+  <span id="sodad-specif-title-id">Query Parameters</span>
+  <div id="sodad-specif-query-id>
+  @if(theTitle != "") {
+    <span class="sodad-specif-lbl-class">Search on title:</span><span class="sodad-specif-value-class">@theTitle</span><span class="sodad-specif-weight-class"> (weight = @{titleWeight.toString})</span>
+    @if(theHL != "") {
+      <br/>
+    }
+  }
+  
+  @if(theHL != "") {
+    <span class="sodad-specif-lbl-class">Search on highlights:</span><span class="sodad-specif-value-class">@theHL</span><span class="sodad-specif-weight-class"> (weight = @{hlWeight.toString})</span>
+  }
+  </div>  
+  @if((theTitle != "") && (theHL != "")) {
+    <form id="hlform" method="get" action="/querylong" target="_blank">
+
+      <div class="sodad-div-ctls-class" id="sodad-div-ctls-id">
+	<table style="width: 100%;">
+	  <tr>
+	    <td style="width: 50%;">
+	      <div id="sodad-div-ctls-title-id" style="margin: 1em;">
+		<table>
+		  <tr>
+		    <td>
+		      <select id="sodad-title-weight-id" name="titleweight">
+			<option value="1.0">1.0</option>
+			<option value="0.9">0.9</option>
+			<option value="0.8">0.8</option>
+			<option value="0.7">0.7</option>
+			<option value="0.6">0.6</option>
+			<option value="0.5" selected="selected">0.5</option>
+			<option value="0.4">0.4</option>
+			<option value="0.3">0.3</option>
+			<option value="0.2">0.2</option>
+			<option value="0.1">0.1</option>
+			<option value="0.0">0.0</option>
+		      </select>
+		    </td>
+		    <td>
+		      <label for="sodad-title-weight-id" style="margin-left: 1em;">Weight for the title</label>
+		    </td>
+		  </tr>
+		</table>
+	      </div>
+	    </td>
+	    <td>
+	      <div id="sodad-div-ctls-hl-id" style="margin: 1em;">
+		<table style"width: 100%;" boder="2">
+		  <tr>
+		    <td>
+		      <select id="sodad-hl-weight-id" name="hlweight" selected="0.5">
+			<option value="1.0">1.0</option>
+			<option value="0.9">0.9</option>
+			<option value="0.8">0.8</option>
+			<option value="0.7">0.7</option>
+			<option value="0.6">0.6</option>
+			<option value="0.5" selected="selected">0.5</option>
+			<option value="0.4">0.4</option>
+			<option value="0.3">0.3</option>
+			<option value="0.2">0.2</option>
+			<option value="0.1">0.1</option>
+			<option value="0.0">0.0</option>
+		      </select>
+		    </td>
+		    <td>
+		      <label for="sodad-hl-weight-id"  style="margin-left: 1em;">Weight for the Highlight</label>
+		    </td>
+		  </tr>
+		</table>
+	      </div>
+	    </td>
+	    <td style="vertical-align: middle;">
+	      <input value="Resubmit" class="sodad-div-ctls-ctl-class sodad-btn-submit" type="submit" style="vertical-align: middle;"/>
+	    </td>
+	  </tr>
+	</table>
+      </div>
+      <input name="papertitle" value="@theTitle" type="hidden"/>
+      <input id="sodad-controlform-hl-hidden-id" name="hl" value="@theHL" type="hidden"/>
+      <input name="search_on_title" value="1" type="hidden"/>
+      <input name="search_on_selected_hl" value="1" type="hidden"/>
+    </form>
+  }
+  </div>
+<script>
+  (function () {
+    var titleWeightSelect = document.getElementById ("sodad-title-weight-id")
+    var hlWeightSelect = document.getElementById ("sodad-hl-weight-id")
+    
+    hlWeightSelect.onchange = 
+    function (evt) {titleWeightSelect.value = (1 - parseFloat (evt.target.value)).toFixed(1)}
+    hlWeightSelect.value = @{hlWeight}.toFixed(1)
+  
+    titleWeightSelect.onchange = 
+    function (evt) {hlWeightSelect.value = (1 - parseFloat (evt.target.value)).toFixed(1)}
+    titleWeightSelect.value = @{titleWeight}.toFixed(1)
+  })()
+</script>
