@@ -1,4 +1,4 @@
-@(theTitle: String, theAbstract: String, theJournal: String, theVolume: String, thePages: String, thePubtime: String, theHL: String)
+@(theTitle: String, theAbstract: String, theJournal: String, theVolume: String, thePages: String, thePubtime: String, theHL: String, searchOnTitle: Boolean, searchOnHL: Boolean, titleWeight: Double, hlWeight: Double)
 
 <!DOCTYPE html>
 <html><head>
@@ -223,7 +223,7 @@ Maastricht, The Netherlands</span></li><li style="display: none;" class="smh5plu
  Antonius Center for Platelet Function Research, Department of Clinical 
 Chemistry, St. Antonius Hospital, Koekoekslaan 1, 3435 CM Nieuwegein, 
 	      The Netherlands</span></li></ul><!--VALIDHTML--><!--VALIDHTML--><div id="currtAsOf"></div><dl style="display: none;" class="articleDates smh"><dd>Received 8 March 2016, Revised 29 April 2016, Accepted 30 April 2016, Available online 3 May 2016</dd><dd style="display: none;" class="crossMarkInfo smh"><div><link media="screen" rel="stylesheet" type="text/css" href="resources/page_files/crossmark_widget.css"><a id="open-crossmark" href="#" style="padding: 0px; display: inline-block;"><img alt="" title="" style="padding-top: 10px; display: inline;" id="crossmark-icon" src="resources/page_files/cm_sbs_018_plain.png"></a><meta name="dc.identifier" content="http://doi.org/10.1016/j.thromres.2016.04.026"></div></dd></dl><!--VALIDHTML--><div id="showMoreButtons"><a class="showLess moreLink" tabindex="0"><span class="CollapseText">&nbsp;</span><span class="showInfo expand" title="Show more author and article information">Show more</span></a><a class="showLess lessLink" tabindex="0"><span style="display: none;" class="ExpandText">&nbsp;</span><span class="showInfo collapse" title="Hide more author and article information">Show less</span></a></div><!--VALIDHTML--><dl class="extLinks nonEmpty"><dd class="doiLink"></dd></dl><div class="moreInformation"><dl class="citation"></dl></div><div class="articleOAlabelForced"></div><div id="refersToAndreferredToBy"><dl id="referredToBy" class="documentThread"><!--Referred To By--></dl></div><!--FRAGMENTEND--><div class="page_fragment_ind auth_frag" data-id="frag_2"></div></div><div id="frag_2" class="page_fragment" data-fid="2"><hr id="abs_author-highlightsab00101" class="artHeader">
-	@paperpagecontrolform(theTitle, theHL)
+	@paperpagecontrolform(theTitle, theHL, searchOnTitle, searchOnHL, titleWeight, hlWeight)
 	<hr id="abs_authorab00051" class="artHeader">
 	<div class="abstract svAbstract " data-etype="ab">
 	  <h2 class="secHeading" id="authorab00051">Abstract</h2>
