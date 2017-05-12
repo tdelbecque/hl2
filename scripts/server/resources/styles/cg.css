@@ -69,3 +69,30 @@
     margin-left: 1em;
     color: blue;
 }
+
+.sodad-resultlist-class {
+    width: 680px;
+}
+
+#sodad-specif-query-id {
+    padding: 10px;
+}
+
+#sodad-specif-title-id {
+    font-size: 150%;
+    font-style: bold;
+    margin-bottom: 10px;
+}
+
+.sodad-specif-div-class {
+    margin-top: 2em;
+}
+
+.sodad-specif-value-class {
+    font-style: italic;
+    color: blue;
+}
+
+.sodad-specif-lbl-class {
+    font-stype: bold;
+}
