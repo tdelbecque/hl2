@@ -1,6 +1,8 @@
 @import org.apache.lucene.search.TopDocs
 @import org.apache.lucene.search.{IndexSearcher, Query}
-@(queryOnTitle: String, queryOnHL: String, docs: TopDocs, searcher: IndexSearcher, query: Query)
+@(queryOnTitle: String, weightOnTitle: Double,
+  queryOnHL: String, weightOnHL: Double,
+  docs: TopDocs, searcher: IndexSearcher, query: Query)
 
 <!doctype html>
 <html>
@@ -16,16 +18,8 @@
     <script src="resources/js/utils.js"> </script>
   </head>
   <body>
-    <div class="sodad-specif-div-class">
-      @if(queryOnTitle != "") {
-        <span class="sodad-specif-lbl-class">Search on title:</span><span class="sodad-specif-value-class">@queryOnTitle</span>
-        @if(queryOnHL != "") {
-          <br/>
-        }
-      }
-      @if(queryOnHL != "") {
-	<span class="sodad-specif-lbl-class">Search on highlights:</span><span class="sodad-specif-value-class">@queryOnHL</span>
-      }
+    <div class="sodad-resultlist-class">
+	@resultlistcontrolform(queryOnTitle, queryOnHL, true, true, weightOnTitle, weightOnHL)
 	@resultitem(docs, searcher, query)
     </div>
   </body>
