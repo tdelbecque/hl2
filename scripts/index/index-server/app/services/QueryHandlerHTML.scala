@@ -83,7 +83,7 @@ object QueryHandlerHTML {
         (acc, x) => acc + getPaperElement (searcher.doc (x.doc), searcher, query, x.doc)) + 
       s"</body></html>\n"
  */
-      views.html.resultlist (title, "", docs, searcher, query)
+      views.html.resultlist (title, 1, "", 1, docs, searcher, query)
     }
     finally {
     }
@@ -151,7 +151,7 @@ object QueryHandlerHTML {
 
       val query = parser parse fullQuery
       val docs = searcher search (query, n)
-      views.html.resultlist (title, hl, docs, searcher, query)
+      views.html.resultlist (title, titleWeight, hl, hlWeight, docs, searcher, query)
     }
     finally {
     }
