@@ -90,12 +90,12 @@
     var titleWeightSelect = document.getElementById ("sodad-title-weight-id")
     var hlWeightSelect = document.getElementById ("sodad-hl-weight-id")
     
-    hlWeightSelect.onchange = 
-    function (evt) {titleWeightSelect.value = (1 - parseFloat (evt.target.value)).toFixed(1)}
-    hlWeightSelect.value = @{hlWeight}.toFixed(1)
-  
-    titleWeightSelect.onchange = 
-    function (evt) {hlWeightSelect.value = (1 - parseFloat (evt.target.value)).toFixed(1)}
-    titleWeightSelect.value = @{titleWeight}.toFixed(1)
+    if (hlWeightSelect && titleWeightSelect) {
+      hlWeightSelect.onchange = function (evt) {titleWeightSelect.value = (1 - parseFloat (evt.target.value)).toFixed(1)}
+      hlWeightSelect.value = @{hlWeight}.toFixed(1)
+    
+      titleWeightSelect.onchange = function (evt) {hlWeightSelect.value = (1 - parseFloat (evt.target.value)).toFixed(1)}
+      titleWeightSelect.value = @{titleWeight}.toFixed(1)
+    }
   })()
 </script>
