@@ -140,5 +140,71 @@ function flipVisibilityForId (id) {
 	    e.style.height = 0
 	    e.dataset.visible = "0"
 	}
-    } else alert ("element not found : " + id)
+    } 
+}
+
+// Remove the bullet in front of each HL line
+function change_dtElement (ddElt) {
+    var e = ddElt.previousElementSibling
+    if (e) e.innerHTML = ''
+}
+
+// Add a checkbox inside each dd element
+function addCheckBox (ddElt, i) {
+    var checked = i ? "" : ' checked="checked"'
+    var html ='<input type="radio" id="cb_selecthl_' +
+	(i + 1) +
+    '" class="sodad-hl-radio-class"' + checked + 
+    ' name="hlselectbtn" class="sodad-hl-radio-class">' 
+
+    ddElt.firstElementChild.insertAdjacentHTML ("afterbegin", html)
+    
+    var cb = ddElt.firstElementChild.firstElementChild
+    cb.dataset.hlno = i + 1
+}
+
+function getHighlightsElementsForPii (pii) {
+    var div = document.getElementById ("div-paper-"+pii)
+    if (div) {
+	var xs = div.querySelectorAll (".abstract.svAbstract.abstractHighlights dd")
+	return xs
+    }
+    return []
+}
+
+function setRadioForPii (pii) {
+    var f = function (ddElt, i) {
+	var checked = i ? "" : ' checked="checked"'
+	var html ='<input type="radio" id="cb_selecthl_' + pii + '_' +
+	    (i + 1) +
+	    '" class="sodad-hl-radio-class"' + checked + 
+	    ' name="hlselectbtn_' + pii + '" class="sodad-hl-radio-class">' 
+	
+	ddElt.firstElementChild.insertAdjacentHTML ("afterbegin", html)
+    
+	var cb = ddElt.firstElementChild.firstElementChild
+	cb.dataset.hlno = i + 1
+    }
+    var hls = getHighlightsElementsForPii (pii)
+    for (var i = 0; i < hls.length; i ++) {
+	change_dtElement (hls[i])
+	f (hls[i], i)
+    }
+//    hls.forEach (change_dtElement)
+//    hls.forEach (f)
+}
+
+function onEventSelect10BalanceFun (id1, id2) {
+    return (function (evt) {
+	var s1 = document.getElementById (id1)
+	var s2 = document.getElementById (id2)
+	if (s1 && s2) {
+	    var t = evt.target
+	    var compVal = (1 - parseFloat (t.value)).toFixed(1)
+	    if (t === s1) 
+		s2.value = compVal
+	    else
+		s1.value = compVal
+	}
+    })
 }
