@@ -16,11 +16,14 @@
 }
 
 .sodad-list-paper {
+     
+}
+
+.sodad-list-paper-pii {
+    padding: 1em;
     margin-top: 1em;
     margin-bottom: 1em;
-    padding: 1em;
     border: 1px black;
-    
 }
 
 .sodad-list-paper-hls {
@@ -95,4 +98,9 @@
 
 .sodad-specif-lbl-class {
     font-stype: bold;
+}
+
+.sodad-list-paper-ctls-class {
+    margin-left: 1em;
+    margin-right: 1em;
 }
