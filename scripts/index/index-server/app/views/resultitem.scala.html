@@ -5,13 +5,13 @@
 
 @(docs: TopDocs, searcher: IndexSearcher, query: Query)
 
-<div class="sodad-list">
+<div class="sodad-list-paper">
   @for(scoreDoc <- docs.scoreDocs) {
     @defining(searcher.doc (scoreDoc.doc)){document =>
     @defining(document get "pii"){pii =>
     @defining(PaperLookup (pii)){maybePaper =>
-    <div class="sodad-list-paper">
-      <div class="sodad-list-paper-pii">@pii
+    <div class="sodad-list-paper-pii" id="div-paper-@pii">
+        <span class="sodad-txt-pii-id">@pii</span>
 	@if(maybePaper.isDefined) {
 	@*
 	Explanation button
@@ -35,15 +35,55 @@
 	  <a href="/paper?pii=@pii" target="_blank">@title</a>
 	</div>
 	<div class="sodad-list-paper-journal">@p.journal</div>
-	<div class="sodad-list-paper-hls">@Html(p.hl)</div>
 	<div class="sodad-list-submit-div">
-	  <form action="/query">
+	  <form id="hlform-@pii" action="/querylong">
+	    <div class="sodad-list-paper-hls">@Html(p.hl)
+	      <span class="sodad-tooltip-class" style="color: blue; cursor: pointer;">Show Abstract<span class="sodad-tooltiptext-class">TODO: Shows/Hides the abstract ...</span></span>
+	    </div>
 	    <input id="hidden_@pii" name="papertitle" type="hidden" value="@title"/>
-	    <input type="submit" value="Submit"/>
+	    <div class="sodad-list-paper-ctls-class">
+	      <table style="width: 100%">
+		<tr>
+		  <td>
+		    <select id="sodad-title-weight-id-@pii" name="titleweight" selected="0.5">
+		      @selectweights()
+		    </select>
+		    <label for="sodad-title-weight-id-@pii" style="margin-left: 1em;">Weight for the title</label>
+		  </td>
+		  <td>
+		    <select id="sodad-hl-weight-id-@pii" name="hlweight" selected="0.5">
+		      @selectweights()
+		    </select>
+		    <label for="sodad-check-search-on-selected-hl-id" style="margin-left: 1em;">Search on selected Highlight</label>
+		  </td>
+		  <td>
+		    <input type="submit" value="Submit"/>
+		  </td>
+		</tr>
+	      </table>
+	    </div>
+	    <input name="search_on_selected_hl" value="1" type="hidden"/>
+	    <input name="search_on_title" value="1" type="hidden"/>
+	    <input id="sodad-controlform-hl-hidden-@pii" name="hl" value="" type="hidden"/>
 	  </form>
 	</div>
 	}}}}
-      </div>
-    </div>
+        </div>  
+    <script>
+      (function () {
+         setRadioForPii("@pii")
+         var f = onEventSelect10BalanceFun ("sodad-title-weight-id-@pii", "sodad-hl-weight-id-@pii")
+         document.getElementById ("sodad-title-weight-id-@pii").onchange = document.getElementById ("sodad-hl-weight-id-@pii").onchange = f
+         var form = document.getElementById ("hlform-@pii")
+         var hiddenHL = document.getElementById ("sodad-controlform-hl-hidden-@pii")
+         hiddenHL.value = form.getElementsByClassName ("sodad-hl-radio-class")[0].parentNode.textContent
+         form.onchange = function (e) {
+            var t = e.target
+            if (t.className === "sodad-hl-radio-class" && t.checked) 
+            hiddenHL.value = t.parentNode.textContent
+          }
+
+      })()    
+    </script>
     }}}
 </div>
