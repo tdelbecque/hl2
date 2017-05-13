@@ -4,7 +4,7 @@
   @Html(theHL)
   <p id="hlExplanation">Please select the highlight that brings the more valuable information, then submit your choice with the button below.</p>
   <div class="sodad-div-ctls-class" id="sodad-div-ctls-id">
-    <table style="weight: 100%;">
+    <table style="width: 100%;">
       <tr>
 	<td style="width: 50%;">
 	  <div id="sodad-div-ctls-title-id" style="margin: 1em;">
@@ -78,10 +78,10 @@
     </table>
     <input type="checkbox" name="saveparameters" id="sodad-check-save-param-id", value="1"/>
     <label for="sodad-check-save-param-id">Save parameters as default</label>
-    <input value="Submit your selection" class="sodad-div-ctls-ctl-class sodad-btn-submit" type="submit">
+    <input value="Submit your selection" class="sodad-div-ctls-ctl-class sodad-btn-submit" type="submit"/>
   </div>
-  <input name="papertitle" value="@theTitle" type="hidden">
-  <input id="sodad-controlform-hl-hidden-id" name="hl" value="" type="hidden">
+  <input name="papertitle" value="@theTitle" type="hidden"/>
+  <input id="sodad-controlform-hl-hidden-id" name="hl" value="" type="hidden"/>
 </form>
 <script>
   (function () {
@@ -99,12 +99,10 @@
     seachOnTitleCB.checked = @searchOnTitle
     seachOnHLCB.checked = @searchOnHL
 
-    hlWeightSelect.onchange = 
-    function (evt) {titleWeightSelect.value = (1 - parseFloat (evt.target.value)).toFixed(1)}
+    hlWeightSelect.onchange = function (evt) {titleWeightSelect.value = (1 - parseFloat (evt.target.value)).toFixed(1)}
     hlWeightSelect.value = @{hlWeight}.toFixed(1)
   
-    titleWeightSelect.onchange = 
-    function (evt) {hlWeightSelect.value = (1 - parseFloat (evt.target.value)).toFixed(1)}
+    titleWeightSelect.onchange = function (evt) {hlWeightSelect.value = (1 - parseFloat (evt.target.value)).toFixed(1)}
     titleWeightSelect.value = @{titleWeight}.toFixed(1)
   
     var f = document.getElementById ("hlform")
