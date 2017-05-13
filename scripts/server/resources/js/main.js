@@ -84,36 +84,30 @@ function getHighlightsElements () {
     return xs
 }
 
-// Remove the bullet in front of each HL line
-function change_dtElement (ddElt) {
-    var e = ddElt.previousElementSibling
-    if (e) e.innerHTML = ''
-}
-
-// Add a checkbox inside each dd element
-function addCheckBox (ddElt, i) {
-    var checked = i ? "" : ' checked="checked"'
-    var html ='<input type="radio" id="cb_selecthl_' +
-	(i + 1) +
-    '" class="sodad-hl-radio-class"' + checked + 
-    ' name="hlselectbtn" class="sodad-hl-radio-class">' 
-
-    ddElt.firstElementChild.insertAdjacentHTML ("afterbegin", html)
-    
-    var cb = ddElt.firstElementChild.firstElementChild
-    cb.dataset.hlno = i + 1
-}
 
 onLoad (function () {
     //addForm ()
     var hls = getHighlightsElements ()
-    hls.forEach (change_dtElement)
-    hls.forEach (addCheckBox)
+    var i = 0
+    for (i = 0; i < hls.length; i ++) {
+	change_dtElement (hls[i])
+	addCheckBox (hls[i], i)
+    }
+    //hls.forEach (change_dtElement)
+    //hls.forEach (addCheckBox)
+    var btns = document.getElementsByName ("hlselectbtn")
+    for (i = 0; i < btns.length; i ++) {
+	var e = btns[i]
+	if (e.checked) 
+	    document.getElementById ("sodad-controlform-hl-hidden-id").value = e.parentNode.textContent
+    }	
+/*	
     document.getElementsByName ("hlselectbtn").forEach (function (e) {
 	if (e.checked) {
 	    document.getElementById ("sodad-controlform-hl-hidden-id").value = e.parentNode.textContent
 	}
     })
+*/
 })
 
 
