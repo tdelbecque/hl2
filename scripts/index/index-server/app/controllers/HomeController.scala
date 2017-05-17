@@ -3,6 +3,7 @@ package controllers
 import javax.inject._
 import play.api._
 import play.api.mvc._
+import services.Authenticate
 
 /**
  * This controller creates an `Action` to handle HTTP requests to the
@@ -17,12 +18,17 @@ class HomeController @Inject() extends Controller {
    * will be called when the application receives a `GET` request with
    * a path of `/`.
    */
-  def index = Action {
-    Unauthorized ("Unauthorized")
-//    notFound(views.html.index("Your new application is ready."))
-  }
+  def index = Action { request => {
+
+    val userAgent : String = request.headers.get ("User-Agent").toString ()
+    if (Authenticate (request))
+      Ok ("Ok")
+    else
+      Unauthorized (views.html.pwd ())
+  }}
 
   def catchAll (path:String) = Action {
     Unauthorized ("Unauthorized")
   }
 }
+
