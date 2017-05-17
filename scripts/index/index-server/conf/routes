@@ -10,7 +10,7 @@ GET	/query			    controllers.QueryController.query(papertitle: String, n: Int ?=
 #POST	/query			    controllers.QueryController.query(papertitle: String, n: Int ?= 10)
 GET	/paper			    controllers.PaperController.get(pii: String ?= "S0049384816304662")
 # An example controller showing how to write asynchronous code
-#GET     /message                    controllers.AsyncController.message
+POST     /authenticate               controllers.AuthenticateController.apply()
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /resources/*file               controllers.Assets.versioned(path="/public", file: Asset)
