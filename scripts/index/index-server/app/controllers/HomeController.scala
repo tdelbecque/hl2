@@ -19,12 +19,14 @@ class HomeController @Inject() extends Controller {
    * a path of `/`.
    */
   def index = Action { request => {
-
+/*
     val userAgent : String = request.headers.get ("User-Agent").toString ()
     if (Authenticate (request))
       Ok ("Ok")
     else
       Unauthorized (views.html.pwd ())
+ */
+    Unauthorized ("Unauthorized")
   }}
 
   def catchAll (path:String) = Action {
