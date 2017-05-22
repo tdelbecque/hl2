@@ -1,0 +1,137 @@
+META ---
+
+meta.tsv : fichier des HL "meta":
+dans postgres:
+\copy (select pii, hlno, hl from hlstatisticscell where nverbsstrong = 1  and nunk > 0 order by rnd) to 'meta.tsv' with csv delimiter E'\t';
+
+==> 3686 lignes
+
+En perl, extraire les terminaisons en "ed", puis les filtrer à la main
+=> meta-ends
+
+extract-meta.pl utilise meta-end pour isoler les HL avec la bonne terminaison.
+
+grep " we " meta.tsv > sample-meta.tsv
+grep " study " meta.tsv >> sample-meta.tsv
+perl extract-meta.pl < meta.tsv >> sample-meta.tsv
+
+\copy (select pii, hlno, hl from hlstatisticscell where hl like 'We %' and nverbsstrong = 1 order by rnd) to 'meta-we.tsv' with csv delimiter E'\t';
+
+\copy (select pii, hlno, hl from hlstatisticscell where hl like '% study %' and nverbsstrong < 2 order by rnd) to 'meta-study.tsv' with csv delimiter E'\t';
+
+-- FACTUAL ---
+
+\copy (select pii, hlno, hl from hlstatisticscell where nunk = 0 and hl not like 'We %' and hl not like '%ed .%' and rnd < 0.01 order by rnd) to 'factual.tsv' with csv delimiter E'\t';
+
+
+-- SIMPLE ---
+
+\copy (select pii, hlno, hl from hlstatisticscell where nunk = 0 and hl not like 'We %' and nverbsstrong = 1 and rnd> 0.98 order by rnd) to 'simple.tsv' with csv delimiter E'\t';
+
+
+-- MULTIPLE
+
+\copy (select pii, hlno, hl from hlstatisticscell where nunk = 0 and hl not like 'We %' and hl like '% and %' and nverbsstrong > 2 order by ntokens desc, rnd) to multi-and.tsv with csv delimiter E'\t';
+
+\copy (select pii, hlno, hl from hlstatisticscell where nunk = 0 and hl not like 'We %' and hl not like '% and %' and nverbsstrong > 2 order by ntokens desc, rnd) to multi-notand.tsv with csv delimiter E'\t';
+
+
+-- Non SPECIALIZED
+
+before: perl ../check-dictionary.pl < ~/HL/data/hlstats.2 > ~/HL/data/hlstats.dicverified
+and import in pg
+
+\copy (select pii, hlno, hl from hlstatisticscell_dic where dicunknown::float = 0  and nverbsstrong > 1 and rnd < 0.6 order by rnd) to 'nontechnical.tsv' with csv delimiter E'\t';
+
+\copy (select pii, hlno, hl from hlstatisticscell_dic where dicunknown::float / dicknown > 1 and ndistconc > 0 and nverbsstrong > 1 order by rnd) to 'highlytechnical.tsv' with csv delimiter E'\t';
+
+\copy (select pii, hlno, hl from hlstatisticscell_dic where dicunknown::float / dicknown < 0.3 and dicunknown::float / dicknown > 0.2 and ndistconc > 0 and nverbsstrong > 1 and rnd < 0.4 order by rnd) to 'midlytechnical.tsv' with csv delimiter E'\t';
+
+drop table if exists sample_meta;
+create table sample_meta (
+       pii char(17),
+       hlno int,
+       hl text);
+\copy sample_meta from 'sample-meta.tsv' with csv delimiter E'\t';
+\copy (select A.*, title, C.journal_title from sample_meta A join articles B on A.pii = B.pii join celljournals C on B.issn = C.issn join hlstatisticscell D on D.pii = A.pii and D.hlno = A.hlno order by D.rnd) to 'sample-meta-proposal.tsv' with csv delimiter E'\t';
+
+drop table if exists sample;
+create table sample (
+       pii char(17),
+       hlno int,
+       hl text);
+\copy sample from 'meta-we.tsv' with csv delimiter E'\t';
+\copy (select A.*, title, C.journal_title from sample A join articles B on A.pii = B.pii join celljournals C on B.issn = C.issn join hlstatisticscell D on D.pii = A.pii and D.hlno = A.hlno order by D.rnd) to 'sample-meta-we-proposal.tsv' with csv delimiter E'\t';
+
+drop table if exists sample;
+create table sample (
+       pii char(17),
+       hlno int,
+       hl text);
+\copy sample from 'meta-study.tsv' with csv delimiter E'\t';
+\copy (select A.*, title, C.journal_title from sample A join articles B on A.pii = B.pii join celljournals C on B.issn = C.issn join hlstatisticscell D on D.pii = A.pii and D.hlno = A.hlno order by D.rnd) to 'sample-meta-study-proposal.tsv' with csv delimiter E'\t';
+
+drop table if exists sample;
+create table sample (
+       pii char(17),
+       hlno int,
+       hl text);
+\copy sample from 'factual.tsv' with csv delimiter E'\t';
+\copy (select A.*, title, C.journal_title from sample A join articles B on A.pii = B.pii join celljournals C on B.issn = C.issn join hlstatisticscell D on D.pii = A.pii and D.hlno = A.hlno order by D.rnd) to 'sample-factual-proposal.tsv' with csv delimiter E'\t';
+
+drop table if exists sample;
+create table sample (
+       pii char(17),
+       hlno int,
+       hl text);
+\copy sample from 'simple.tsv' with csv delimiter E'\t';
+\copy (select A.*, title, C.journal_title from sample A join articles B on A.pii = B.pii join celljournals C on B.issn = C.issn join hlstatisticscell D on D.pii = A.pii and D.hlno = A.hlno order by D.rnd) to 'sample-simple-proposal.tsv' with csv delimiter E'\t';
+
+drop table if exists sample;
+create table sample (
+       pii char(17),
+       hlno int,
+       hl text);
+\copy sample from 'multi.tsv' with csv delimiter E'\t';
+\copy (select A.*, title, C.journal_title from sample A join articles B on A.pii = B.pii join celljournals C on B.issn = C.issn join hlstatisticscell D on D.pii = A.pii and D.hlno = A.hlno order by D.rnd) to 'sample-multi-proposal.tsv' with csv delimiter E'\t';
+
+drop table if exists sample;
+create table sample (
+       pii char(17),
+       hlno int,
+       hl text);
+\copy sample from 'multi-and.tsv' with csv delimiter E'\t';
+\copy (select A.*, title, C.journal_title from sample A join articles B on A.pii = B.pii join celljournals C on B.issn = C.issn join hlstatisticscell D on D.pii = A.pii and D.hlno = A.hlno order by D.rnd) to 'sample-multi-and-proposal.tsv' with csv delimiter E'\t';
+
+drop table if exists sample;
+create table sample (
+       pii char(17),
+       hlno int,
+       hl text);
+\copy sample from 'multi-notand.tsv' with csv delimiter E'\t';
+\copy (select A.*, title, C.journal_title from sample A join articles B on A.pii = B.pii join celljournals C on B.issn = C.issn join hlstatisticscell D on D.pii = A.pii and D.hlno = A.hlno order by D.rnd) to 'sample-multi-notand-proposal.tsv' with csv delimiter E'\t';
+
+drop table if exists sample;
+create table sample (
+       pii char(17),
+       hlno int,
+       hl text);
+\copy sample from 'nontechnical.tsv' with csv delimiter E'\t';
+\copy (select A.*, title, C.journal_title from sample A join articles B on A.pii = B.pii join celljournals C on B.issn = C.issn join hlstatisticscell D on D.pii = A.pii and D.hlno = A.hlno order by D.rnd) to 'sample-nontechnical-proposal.tsv' with csv delimiter E'\t';
+
+drop table if exists sample;
+create table sample (
+       pii char(17),
+       hlno int,
+       hl text);
+\copy sample from 'midlytechnical.tsv' with csv delimiter E'\t';
+\copy (select A.*, title, C.journal_title from sample A join articles B on A.pii = B.pii join celljournals C on B.issn = C.issn join hlstatisticscell D on D.pii = A.pii and D.hlno = A.hlno order by D.rnd) to 'sample-midlytechnical-proposal.tsv' with csv delimiter E'\t';
+
+drop table if exists sample;
+create table sample (
+       pii char(17),
+       hlno int,
+       hl text);
+\copy sample from 'highlytechnical.tsv' with csv delimiter E'\t';
+\copy (select A.*, title, C.journal_title from sample A join articles B on A.pii = B.pii join celljournals C on B.issn = C.issn join hlstatisticscell D on D.pii = A.pii and D.hlno = A.hlno order by D.rnd) to 'sample-highlytechnical-proposal.tsv' with csv delimiter E'\t';
+
