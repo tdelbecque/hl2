@@ -4,11 +4,18 @@
 @defining(titleTerms.iterator) {titleIt =>
 @defining(hlTerms.iterator) {hlIt =>
 <div>
+  <h2>Title</h2>
+  <ul>
   @for(i <- 0 to 1000 if titleIt.next != null){
-	    @{titleIt.term.utf8ToString}
+	    <li>@{titleIt.term.utf8ToString}</li>
 	    }
+  </ul>
+  <h2>Highlights</h2>
+  <ul>
   @for(i <- 0 to 1000 if hlIt.next != null) {
-	    @{hlIt.term.utf8ToString}
-	    }
+	    <li>@{hlIt.term.utf8ToString}</li>
+  }
+  </ul>
 </div>
 }}
+
