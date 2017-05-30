@@ -16,4 +16,16 @@ HighlightAnalyzer.class: HighlightAnalyzer.scala HighlightTokenStreamFilter.clas
 run: build
 	scala -J-Xmx24g -classpath ${CP} index /home/thierry/tmp/index
 
-build: index.class
+build: index.class show.class reader.class
+
+show.class: show.scala index.class
+	scalac -classpath ${CP} $<
+
+reader.class: reader.scala
+	scalac -classpath ${CP} $<
+
+runshow: build
+	scala -J-Xmx24g -classpath ${CP} show
+
+runreader: build
+	scala -J-Xmx24g -classpath ${CP} reader
