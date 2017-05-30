@@ -6,6 +6,8 @@
 GET     /                           controllers.HomeController.index
 #GET	/count			    controllers.CountController.count
 GET	/querylong		    controllers.QueryController.querylong(papertitle: String ?= "", hl: String ?= "", search_on_title: Boolean ?= false, search_on_selected_hl: Boolean ?= false, titleweight: Double ?= 0.5, hlweight: Double ?= 0.5, saveparameters: Boolean ?= false, n: Int ?= 10)
+GET	/search			    controllers.QueryController.search(query: String)
+GET	/analysis		    controllers.PaperController.getHung(pii: String ?= "")
 #GET	/query			    controllers.QueryController.query(papertitle: String, n: Int ?= 10)
 #POST	/query			    controllers.QueryController.query(papertitle: String, n: Int ?= 10)
 GET	/paper			    controllers.PaperController.get(pii: String ?= "S0049384816304662")
@@ -14,5 +16,8 @@ POST     /authenticate               controllers.AuthenticateController.apply()
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /resources/*file               controllers.Assets.versioned(path="/public", file: Asset)
-GET	/*path			       controllers.HomeController.catchAll(path)
 
+GET	/ws			       controllers.WSController.socket
+GET	/wstest			       controllers.WSTestController.apply
+
+GET	/*path			       controllers.HomeController.catchAll(path)
