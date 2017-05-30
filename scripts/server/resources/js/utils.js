@@ -128,18 +128,29 @@ function isHidden(e) {
     return e.dataset.visible === "0"
 }
 
-function flipVisibilityForId (id) {
+function flipVisibilityForId (id, others) {
+    hidefun = function (e) {
+	e.style.visibility='hidden'
+	e.style.height = 0
+	e.dataset.visible = "0"
+    }
+    showfun = function (e) {
+	e.style.visibility='visible'
+	e.style.height = "auto"
+	e.dataset.visible = "1"
+    }
     var e = document.getElementById (id)
     if (e) {
 	if (isHidden (e)) {
-	    e.style.visibility='visible'
-	    e.style.height = "auto"
-	    e.dataset.visible = "1"
-	} else {
-	    e.style.visibility='hidden'
-	    e.style.height = 0
-	    e.dataset.visible = "0"
-	}
+	    showfun (e)
+	    if (others && others.length) {
+		for (var i = 0; i < others.length; i ++) {
+		    var o = document.getElementById (others [i])
+		    if (o) hidefun (o)
+		}
+	    }
+	} else
+	    hidefun (e)
     } 
 }
 
