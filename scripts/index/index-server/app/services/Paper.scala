@@ -9,28 +9,7 @@ import scala.io.Source
 import scala.util.matching.Regex
 
 object Paper {
-  /*
-  val paperTemplateFile = System.getenv("HLWORKDIR") + "/scripts/server/resources/page.html"
-
-  val paperTemplate = Source.
-    fromFile (paperTemplateFile).
-    getLines.
-    mkString
-
-  def get (pii: String): Option[String] = {
-    PaperLookup (pii).map (x => {
-      var page = "__TITLE__".r.replaceAllIn (paperTemplate, x.title)
-      page = "__ABSTRACT__".r.replaceAllIn (page, x.abstr)
-      page = "__JOURNAL__".r.replaceAllIn (page, x.journal)
-      page = "__VOLUME__".r.replaceAllIn (page, x.volume)
-      page = "__PAGES__".r.replaceAllIn (page, x.pages)
-      page = "__PUBTIME__".r.replaceAllIn (page, x.pubtime)
-      page = "__HIGHLIGHTS__".r.replaceAllIn (page, x.hl)
-      return Some (page)
-    })
-  }
-}
- */
+  def getHung (pii: String) : String = PaperLookup.getHung (pii)
 
   def get (
     pii: String,
@@ -80,5 +59,18 @@ object PaperLookup {
     rs.close ()
 
     Some (P (pii, title, journal, abstract_, volume, pubtime, pages, hl))
+  }
+
+  def getHung (pii: String) : String = {
+    val stmt: Statement = con createStatement
+    var rs = stmt.executeQuery ("select * from hung_predicates where pii = '" + pii + "' order by hlno")
+    var result: String = ""
+    while (rs.next ()) {
+      val hlno = rs.getString ("hlno")
+      val p = rs.getString ("predicates")
+      result = result + s"${pii}\t${hlno}\t${p}\n"
+    }
+    rs.close ()
+    result
   }
 }
