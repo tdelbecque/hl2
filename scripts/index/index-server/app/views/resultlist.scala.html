@@ -18,6 +18,7 @@
     <script src="resources/js/utils.js"> </script>
   </head>
   <body>
+    @search()
     <div class="sodad-resultlist-class">
 	@resultlistcontrolform(queryOnTitle, queryOnHL, true, true, weightOnTitle, weightOnHL)
 	@resultitem(docs, searcher, query)
