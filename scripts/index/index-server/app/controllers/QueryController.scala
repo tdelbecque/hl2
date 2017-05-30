@@ -10,8 +10,15 @@ import services.Authenticate
 
 @Singleton
 class QueryController @Inject() extends Controller {
+  def search(q: String, n: Int = 10) = Action {request => {
+    if (Authenticate (request)) {
+      Ok(QueryHandlerHTML.search (q, n))
+    } else {
+      Unauthorized (views.html.pwd ())
+    }
+  }}
+
   def query (q: String, n: Int = 10) = Action {
-    Console println q
     Ok (QueryHandlerHTML (q, n)).as("text/html")
   }
 
