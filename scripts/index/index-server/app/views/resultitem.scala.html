@@ -13,9 +13,11 @@
     @defining(s"sodad-explain-id-$pii"){explanationDivId =>
     @defining(s"sodad-terms-vector-id-$pii"){termsVectorDivId =>
     @defining(s"sodad-analysis-id-$pii"){analysisDivId =>
+    @defining(s"sodad-abstract-id-$pii"){abstractDivId =>
     @defining(s"sodad-explain-btn-id-$pii"){explanationBtnId =>
     @defining(s"sodad-terms-vector-btn-id-$pii"){termsVectorBtnId =>
     @defining(s"sodad-analysis-btn-id-$pii"){analysisBtnId =>
+    @defining(s"sodad-abstract-btn-id-$pii"){abstractBtnId =>
     <div class="sodad-list-paper-pii" id="div-paper-@pii">
         <span class="sodad-txt-pii-id"><a href="http://www.sciencedirect.com/science/article/pii/@pii" target="_blank">@pii</a></span>
 	@if(maybePaper.isDefined) {
@@ -29,11 +31,11 @@
 	</span>
 	<span id='@termsVectorBtnId' class="sodad-tooltip-class" style="cursor: pointer;">
 	  [Terms Vectors]
-	  <span class="sodad-tooltiptext-class">Shows/Hides Indexing Terms Vector (TODO)</span>
+	  <span class="sodad-tooltiptext-class">Shows/Hides Indexing Terms Vector</span>
 	</span>
 	<span id='@analysisBtnId' class="sodad-tooltip-class" style="cursor: pointer;">
 	  [Analysis]
-	  <span class="sodad-tooltiptext-class">Shows/Hides NLP Analysis (TODO)</span>
+	  <span class="sodad-tooltiptext-class">Shows/Hides NLP Analysis</span>
 	</span>	
 	<div class="sodad-explanation-class" id="@explanationDivId" style="height: 0px; visibility: hidden;" data-visible="0" data-loaded="1">
 	  @Html(explanation.toHtml())
@@ -41,7 +43,7 @@
 	<div class="sodad-explanation-class" id="@termsVectorDivId" style="height: 0px; visibility: hidden;" data-visible="0" data-loaded="0">
 	  TERMS VECTOR NOT LOADED
 	</div>
-	<div class="sodad-explanation-class" id="@analysisDivId" style="height: 0px; visibility: hidden;" data-visible="0" data-loaded="1">
+	<div class="sodad-explanation-class" id="@analysisDivId" style="height: 0px; visibility: hidden;" data-visible="0" data-loaded="0">
 	  ANALYSIS NOT LOADED
 	</div>
 	}
@@ -57,7 +59,10 @@
 	<div class="sodad-list-submit-div">
 	  <form id="hlform-@pii" action="/querylong">
 	    <div class="sodad-list-paper-hls">@Html(p.hl)
-	      <span class="sodad-tooltip-class" style="color: blue; cursor: pointer;">Show Abstract<span class="sodad-tooltiptext-class">TODO: Shows/Hides the abstract ...</span></span>
+	      <span id="@abstractBtnId" class="sodad-tooltip-class" style="color: blue; cursor: pointer;">Show Abstract<span class="sodad-tooltiptext-class">Shows/Hides the abstract ...</span></span>
+	      <div class="sodad-explanation-class" id="@abstractDivId" style="height: 0px; visibility: hidden;" data-visible="0" data-loaded="0">
+	  ABSTRACT NOT LOADED
+	      </div>
 	    </div>
 	    <input id="hidden_@pii" name="papertitle" type="hidden" value="@title"/>
 	    <div class="sodad-list-paper-ctls-class">
@@ -102,23 +107,24 @@
             hiddenHL.value = t.parentNode.textContent
          }
          // handle information divs
-         var fun = function (btnId, divId, others) {
+         var fun = function (btnId, divId, others, command) {
             var btn = document.getElementById (btnId)
             if (btn)
-      btn.onclick = function () {
-var idiv = document.getElementById (divId)
+              btn.onclick = function () {
+                var idiv = document.getElementById (divId)
       
                 if (idiv && idiv.dataset.loaded == "0" && SODAD && SODAD.loadHandler)
-                  SODAD.loadHandler ('@pii', 'termsVector', divId)
+                  SODAD.loadHandler ('@pii', command, divId)
                 flipVisibilityForId(divId, others)}
          }
 
          fun ('@explanationBtnId', '@explanationDivId', ['@termsVectorDivId','@analysisDivId'])
-         fun ('@termsVectorBtnId', '@termsVectorDivId', ['@explanationDivId', '@analysisDivId'])
-         fun ('@analysisBtnId', '@analysisDivId', ['@explanationDivId', '@termsVectorDivId'])
+         fun ('@termsVectorBtnId', '@termsVectorDivId', ['@explanationDivId', '@analysisDivId'], 'termsVector')
+         fun ('@analysisBtnId', '@analysisDivId', ['@explanationDivId', '@termsVectorDivId'], 'analysis')
+         fun ('@abstractBtnId', '@abstractDivId', [], 'abstract')
       })()    
     </script>
-    }}}}}}}}}}
+    }}}}}}}}}}}}
 </div>
 <script>
   var undef
