@@ -61,9 +61,31 @@ object PaperLookup {
     Some (P (pii, title, journal, abstract_, volume, pubtime, pages, hl))
   }
 
+  def getAnalysis (pii: String) = {
+    val stmt: Statement = con createStatement
+    val rs = stmt.executeQuery (s"select data from parsing where pii = '${pii}'")
+    var result = ""
+    if (rs.next ()) {
+      result = rs.getString ("data")
+    }
+    rs.close ()
+    result
+  }
+
+  def getAbstract (pii: String) = {
+    val stmt: Statement = con createStatement
+    val rs = stmt.executeQuery (s"select abstract from articles where pii = '${pii}'")
+    var result = ""
+    if (rs.next ()) {
+      result = rs.getString ("abstract")
+    }
+    rs.close ()
+    result
+  }
+
   def getHung (pii: String) : String = {
     val stmt: Statement = con createStatement
-    var rs = stmt.executeQuery ("select * from hung_predicates where pii = '" + pii + "' order by hlno")
+    val rs = stmt.executeQuery (s"select * from hung_predicates where pii = '${pii}' order by hlno")
     var result: String = ""
     while (rs.next ()) {
       val hlno = rs.getString ("hlno")
