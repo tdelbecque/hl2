@@ -70,12 +70,14 @@ object index extends App {
     val piiFieldType = new FieldType
     val titleFieldType = new FieldType
 
-    piiFieldType setIndexOptions IndexOptions.NONE
+    piiFieldType setIndexOptions IndexOptions.DOCS
+    piiFieldType setTokenized false
     piiFieldType setStored true
     d add new Field ("pii", pii, piiFieldType)
     
     titleFieldType setIndexOptions IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS
     titleFieldType setStored true
+    titleFieldType setStoreTermVectors true
     d add new Field ("title", title, titleFieldType)
 
     /*
@@ -102,6 +104,7 @@ object index extends App {
       val hlFieldType = new FieldType
       hlFieldType setIndexOptions IndexOptions.DOCS_AND_FREQS_AND_POSITIONS
       hlFieldType setStored false
+      hlFieldType setStoreTermVectors true
       d add new Field ("hl", allhl, hlFieldType)
     }
     objectTokens.clear
