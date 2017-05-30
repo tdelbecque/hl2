@@ -28,6 +28,8 @@ class Loader {
 	    forEach (x => {
 		const pii = x.PII
 		delete x.PII
+		x.TextEnd = parseInt (x.TextEnd)
+		x.TextOffset = parseInt (x.TextOffset)
 		const tags = this.dict [pii]
 		if (! tags) this.dict [pii] = [x]
 		else tags.push (x)
