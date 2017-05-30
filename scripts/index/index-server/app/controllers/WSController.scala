@@ -6,7 +6,7 @@ import play.api.libs.streams._
 import akka.actor._
 import akka.stream._
 import play.api.libs.json.{Json, JsValue}
-import services.QueryHandlerHTML
+import services.{QueryHandlerHTML, PaperLookup}
 
 class WSController @Inject() (implicit system: ActorSystem, materializer: Materializer) {
   class MyWebSocketActor(out: ActorRef) extends Actor {
@@ -53,7 +53,35 @@ class WSController @Inject() (implicit system: ActorSystem, materializer: Materi
         }
         ret
       }
-      case _ => "BIZARRE" 
+      case "analysis" => {
+        val ret = (msg \ "pii").asOpt[String] match {
+          case Some(pii) => {
+            val analysis = PaperLookup.getAnalysis (pii)
+            val retJsValue = Json.obj (
+              "pii" -> pii,
+              "divid" -> (msg \ "divid").as[String],
+              "content" -> views.html.analysis (analysis).body)
+            Json.stringify (retJsValue)
+          }
+          case _ => "Missing pii"
+        }
+        ret
+      }
+      case "abstract" => {
+        val ret = (msg \ "pii").asOpt[String] match {
+          case Some(pii) => {
+            val abstr = PaperLookup.getAbstract (pii)
+            val retJsValue = Json.obj (
+              "pii" -> pii,
+              "divid" -> (msg \ "divid").as[String],
+              "content" -> views.html.abstr (abstr).body)
+            Json.stringify (retJsValue)
+          }
+          case _ => "Missing pii"
+        }
+        ret        
+      }
+      case _ => "" 
     }
   }
 }
