@@ -1,0 +1,22 @@
+<!doctype html>
+<html>
+  <script>
+    window.onload = function () {
+    var socket = new WebSocket ("ws://" + location.host + "/ws")
+    socket.onmessage = function (evt) {
+    var msg = evt.data
+    var e = document.getElementById ("thespan")
+    e.textContent = msg
+    }
+    socket.onopen = function (evt) {
+    socket.send ('{"what": "termsVector", "pii": "S0049384816304662"}')
+    }
+    socket.onerror = function (evt) {
+    alert ("socket error")
+    }
+    }
+  </script>
+  <body>
+    <span id="thespan">Test</span>
+  </body>
+</html>
