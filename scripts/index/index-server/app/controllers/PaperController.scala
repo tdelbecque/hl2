@@ -35,4 +35,11 @@ class PaperController @Inject() extends Controller {
       Unauthorized (views.html.pwd ())
     }
   }
+  def getHung (pii: String) = Action { request =>
+    if (Authenticate (request)) {
+      Ok (Paper.getHung (pii))
+    } else {
+      Unauthorized (views.html.pwd ())
+    }
+  }
 }
