@@ -64,6 +64,7 @@ function F (pathToFPDir = defaultPathToFPDir) {
 	    let cursor = 0
 	    tags.forEach ((tag, i) => {
 		try {
+		    if (tag.TextOffset < cursor) return
 		    if (hl.slice (tag.TextOffset, tag.TextEnd) !== tag.Text) {
 			let err = `ERROR ${pii}\t${i}: expected (${tag.Text}) found (${hl.slice (tag.TextOffset, tag.TextEnd)})\n` +
 			    `cursor = ${cursor}\n` +
@@ -73,7 +74,7 @@ function F (pathToFPDir = defaultPathToFPDir) {
 		    if (tag.TextOffset > cursor)
 			slices.push (hl.slice (cursor, tag.TextOffset))
 		    /* 
-		       tags are ordered by incrasing TextOffset and then decreasing TextEnd 
+		       tags are ordered by increasing TextOffset and then decreasing TextEnd 
 		       It occurs sometime that more than one tag is attributed to a given TextOffset.
 		       We cope with this situation by insuring that the current tag.TextOffset value 
 		       is not less than the current cursor value.
