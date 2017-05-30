@@ -400,7 +400,27 @@ It is implemented in \emph{server.js} file.
 
 \TODO{all xml files should be used: browse a directory.}
 
-\TODO{use express framework.}
+\chapter{HOWTOS}
+\section{check list from epfl and update accordingly}
+\begin{enumerate}
+\item check piis that are not covered:
+  \begin{lstlisting}[language=SQL]
+    \copy (select distinct pii
+    from (select A.pii , B.pii x from hughes A left outer
+      join hung_predicates B on A.pii = B.pii) X where x is null) to 'UNKNOWNS';
+  \end{lstlisting}
+\item get the data:
+  \begin{lstlisting}
+    node runGetHLPar.js UNKNOWNS > ~/HL/data/in/HL/HL.patch-hughes-2
+  \end{lstlisting}
+\item compute new candidates HL and analyse
+  \begin{lstlisting}
+    ./extractNewHL ~/HL/data/in/HL/ ~/HL/data/out/parser/ | sort -k 1,1 -u > ~/HL/data/out/PENDING.hughes-2
+    ./make.sh ~/HL/data/out/PENDING.hughes-2 2>network/LOGS/make.hughes-2
+  \end{lstlisting}
+\end{enumerate}
+
+
 \chapter{Tools from the NLM}
 \section{Resources}
 They are organized in the \$UMLSPATH directory:
