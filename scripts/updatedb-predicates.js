@@ -23,8 +23,8 @@ class Process {
 	    throw 'Cannot connect'
 	}
 	try {
-	    let c = await this.client.query (`select PII from ${tableName}`)
-	    this.dic = c.rows.reduce ((a, b) => a.add (b.pii), new Set ())
+	    let c = await this.client.query (`select PII, hlno from ${tableName}`)
+	    this.dic = c.rows.reduce ((a, b) => a.add (`${b.pii}_${b.hlno}`), new Set ())
 	}
 	catch (err) {
 	    U.croak (`Error while loading dictionary : ${err}`)
@@ -49,8 +49,9 @@ class Process {
 	    let xs = l.split ("\t")
 	    if (xs.length)
 		while (! xs [0].match (/^S(?:X|\d){16}$/)) xs.shift ()
-	    if (xs.length === 3 && ! this.dic.has (xs [0])) {
-		this.dic.add (xs [0])
+	    let thekey = `${xs[0]}_${xs[1]}`
+	    if (xs.length === 3 && ! this.dic.has (thekey)) {
+		this.dic.add (thekey)
 		const q = `insert into ${tableName} values ('${xs[0]}', ${xs[1]}, '${xs[2]}')`
 		try {
 		    await this.client.query (q)
