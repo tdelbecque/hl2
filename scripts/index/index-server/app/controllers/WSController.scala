@@ -33,7 +33,7 @@ class WSController @Inject() (implicit system: ActorSystem, materializer: Materi
   }
 
   def socket = WebSocket.accept[String, String] { request => {
-    Console.err println "Connect"
+    //Console.err println "Connect"
     ActorFlow.actorRef (out => MyWebSocketActor.props(out))
   }}
 
