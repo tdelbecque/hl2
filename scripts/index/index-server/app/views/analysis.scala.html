@@ -3,6 +3,14 @@
 <div style="font-family: monospace;">
 @defining(analysis.split ("\n")) {lines =>
 @for(l <- lines) {
-@l<br/>	  
+	  @if(l == "<HL>" || l == "</HL>"){
+	  <span style="color: red; font-weight: bold;">@l</span>
+	  } else {
+	  @if(! ((l startsWith "<") && (l endsWith ">"))) {
+	    <span style="color: green; font-weight: bold;">@l</span>
+	    } else {
+	    @l
+	    }}
+	  <br/>	  
 	  }}
 </div>
