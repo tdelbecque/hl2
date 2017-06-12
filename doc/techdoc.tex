@@ -400,6 +400,223 @@ It is implemented in \emph{server.js} file.
 
 \TODO{all xml files should be used: browse a directory.}
 
+\chapter{Postprocessing}
+\section{POS tagging postprocessing}
+It aims at fixing some errors made by TreeTagger. We assume that TreeTagger is likely to have failed when no predicate was found, meaning that TurboParser was not able to find ROOT, SUB and OBJ nodes in the dependency tree.
+
+The principle is to use all HL that could be translated into predicates (so where TreeTagger was successful) as a reference set from which some statistics will be extracted. These statstics will be used to pre-set some tags in the HL from the failed set.
+
+Often the predicate could not be extracted because the verbs were not correctly tagged. So this algorithm focuses on verbs and tries to fix potentiel tag errors there.
+\subsection*{Scoring formula}
+Error correction is based on the prediction of the tag given the token and the context. The context is made of the POS just before and just after the element under inspection. The new tag $tag\prime$ is defined as:
+$$
+tag\prime = argmax_{tag} P(tag|context,token)
+$$
+rewriting the probabilities:
+$$
+P(tag|context,token)=\frac{P(context,token|tag)P(tag)}{P(context,token)}
+$$
+We do not want to use the estimate of $P(context,token|tag)$ from the dataset as this is where the tagger failed, and doing so would just reinject the error we want to fix in the procedure. So we replace it with $P(context|tag)P(token|tag)$: we make the assumption that the errors made by the tagger is more diluted if we use these elementary probabilities. So we now have:
+$$
+tag\prime = argmax_{tag}\left(\frac{P(context|tag)P(token|tag)P(tag)}{P(context,token)}\right)
+$$
+By pluging in the counts:
+$$
+tag\prime = argmax_{tag}\left(\frac{\#(context,tag)}{\#tag}\frac{\#(token,tag)}{\#tag}\frac{\#tag}{N}\frac{N}{\#(context,token)}\right)
+$$
+so:
+$$
+tag\prime = argmax_{tag}\left(\frac{\#(context,tag) \#(token,tag)}{\#tag \#(context,token)}\right)
+$$
+The following tables implements the distinct parts of this formula:
+\begin{description}
+\item[F1] $\equiv \#(context,tag)$
+\item[F2] $\equiv \#(token,tag)$
+\item[F3] $\equiv \#tag$
+\item[F4] $\equiv \#(context,token)$
+\item[F5] $\equiv \frac{F1\times F2}{F3\times F4}$
+\end{description}
+\subsection*{Process}
+We are in \cs{script/analysis}.
+\begin{enumerate}
+\item format the predicate files:
+  \begin{lstlisting}[language=Bash]
+    perl export-tokens.pl <
+      ~/HL/data/out/predicates/PENDING.1495553761.tagged >
+      tokens.tsv
+  \end{lstlisting}
+\item import into PG:
+  \begin{lstlisting}[language=SQL]
+    drop table if exists tokens;
+    create table tokens (
+       pii   char(17),
+       hlno  integer,
+       gtokno bigint,
+       token text,
+       pos   text,
+       lemma text,
+       tokno  integer,
+       klass char(4));
+
+    \copy tokens from 'tokens.tsv' with csv delimiter E'\t' quote E'\b';
+    alter table tokens add primary key (gtokno);
+  \end{lstlisting}
+\item compute the context table
+  \begin{lstlisting}[language=SQL]
+    drop table if exists token_ctx_left;
+    create table token_ctx_left as (
+      select A.gtokno, A.pii, A.hlno, A.tokno, A.klass,
+        B.pos posbef, A.pos, B.token tokbef , A.token
+        from tokens A
+        left outer join tokens B on A.gtokno = B.gtokno + 1);
+    alter table token_ctx_left add primary key (gtokno);
+
+    drop table if exists tokens_ctx1;
+    create table tokens_ctx1 as (
+      select A.*,  B.pos posaft, B.token tokaft
+      from token_ctx_left A
+      left outer join tokens B on B.gtokno = A.gtokno + 1);
+      
+    alter table tokens_ctx1 add primary key (gtokno);
+    create index tokens_ctx1_tok_idx on tokens_ctx1(token);
+    create index tokens_ctx1_pos_idx on tokens_ctx1(pos);
+    create index tokens_ctx1_posbef_idx on tokens_ctx1(posbef);
+    create index tokens_ctx1_posaft_idx on tokens_ctx1(posaft);
+
+    update tokens_ctx1 set posbef='NIL', tokbef='' where tokbef is null;
+    update tokens_ctx1 set posaft='NIL', tokaft='' where tokaft is null;
+  \end{lstlisting}
+\item Create the context table restricted to successful tagging
+  \begin{lstlisting}[language=SQL]
+    drop table if exists tokens_ctx1_in;
+    create table tokens_ctx1_in as (
+      select
+        *,
+        case when  posbef='IN' then 'IN_' || tokbef else posbef end statbef,
+        case when posaft = 'IN' then 'IN_' || tokaft else posaft end stataft
+      from tokens_ctx1
+      where klass != 'unk');
+  \end{lstlisting}
+\item create the list of verbs: as we want to fix tagging problems that occured on verbs, we begin by extracting a list of candicate verbs:
+  \begin{lstlisting}[language=SQL]
+    \copy (
+      select count(*) n, token
+      from tokens
+      where klass != 'unk' and
+             pos in ('VBP', 'VBD', 'VBZ') and
+             lemma not in ('be', 'do', 'can', 'have')
+      group by token
+      order by n desc)
+    to verbs.tsv with csv delimiter E'\t';
+  \end{lstlisting}
+  \begin{lstlisting}[language=bash]
+    perl -ne 'print "$1\n" if /^\d+\t([a-zA-Z][a-z]+)$/' < verbs.tsv > verbs
+  \end{lstlisting}
+  \begin{lstlisting}[language=SQL]
+    drop table if exists verbs_curated;
+    create table verbs_curated (token text);
+    \copy verbs_curated from 'verbs';
+  \end{lstlisting}
+\item compute the scoring functions, F1 to F4 (\cs{create\_fun.sql}):
+  \begin{lstlisting}[language=SQL]
+    drop table if exists F3 cascade;
+    create table F3 as (
+      select count(*) n, pos
+      from tokens_ctx1_in
+      where pos in ('VBP', 'VBZ', 'VBD', 'NN', 'NNS', 'NP', 'NPS', 'JJ', 'RB')
+      group by pos);
+
+    drop table if exists F1 cascade;
+    create table F1 as (
+      select count(*) n, statbef, pos, stataft
+      from tokens_ctx1_in A
+      join verbs_curated B on A.token = B.token
+      where pos in (select pos from F3)
+      group by pos, statbef, stataft);
+    alter table F1 add primary key (statbef, pos, stataft);
+    create index F1_statbef_idx on F1(statbef);
+    create index F1_pos_idx on F1(pos);
+    create index F1_stataft_idx on F1(stataft);
+
+    drop table if exists F2 cascade;
+    create table F2 as (
+      select count(*) n, A.token, pos
+      from tokens_ctx1_in A
+      join verbs_curated B on B.token = A.token
+      where pos in (select pos from F3)
+      group by A.token, pos);
+    alter table F2 add primary key (token, pos);
+    create index F2_token_idx on F2(token);
+    create index F2_pos_idx on F2(pos);
+
+    drop table if exists F4 cascade;
+    create table F4 as (
+      select count(*) n, statbef, A.token, stataft
+      from tokens_ctx1_in A
+      join verbs_curated B on B.token = A.token
+      group by statbef, A.token, stataft);
+    alter table F4 add primary key (statbef, token, stataft);
+    create index F4_statbef_idx on F4(statbef);
+    create index F4_token_idx on F4(token);
+    create index F4_stataft_idx on F4(stataft);
+
+    drop table if exists F5 cascade;
+    create table F5 as (
+      select
+        (F1.n::real * F2.n)/(F3.n * F4.n) score,
+        F1.statbef,
+        F2.token,
+        F3.pos,
+        F1.stataft
+      from F3
+      join F1 on F3.pos = F1.pos
+      join F2 on F2.pos = F3.pos
+      join F4 on F1.statbef = F4.statbef and F1.stataft = F4.stataft and F4.token = F2.token);
+  \end{lstlisting}
+\item create a table with statistics that will allow us to take appart 'bad' hl according to our criteria:
+  \begin{lstlisting}[language=SQL]
+    -- this table is used to take apart analysis according to whether we believe
+    --   they are successful or not.
+    -- A successful analysis led to a 'predicate', in which case U <> size.
+    drop table if exists success;
+    create table success as (
+      select pii, hlno, count(*) size,
+             sum (case when klass='unk' then 1 else 0 end) U,
+             sum (case when pos in ('VBP', 'VBZ', 'VBD') then 1 else 0 end) V
+      from tokens group by pii, hlno);
+  \end{lstlisting}
+\item exports failed HL's:
+  \begin{lstlisting}[language=SQL]
+    drop table if exists fail_verbs cascade;
+    create table fail_verbs as (
+      select distinct pii, hlno
+      from tokens A
+      join verbs_curated B on A.token = B.token
+      where klass='unk' and pos not like 'V%');
+
+    drop table if exists bar cascade;
+    create table bar as
+      select distinct A.pii, A.hlno
+      from success A
+      join fail_verbs B on A.pii = B.pii and A.hlno = B.hlno where v = 0 and size=u;
+
+    \copy (select X.pii, X.hlno, A.tokno,
+                  case when B.posbef = 'IN' then 'IN_' || B.tokbef else posbef end statbef,
+                  case when B.posaft = 'IN' then 'IN_' || B.tokaft else B.posaft end stataft,
+                  A.pos, A.token, A.lemma
+           from bar X
+           join  tokens A on A.pii = X.pii and A.hlno = X.hlno
+           join  tokens_ctx1 B on B.pii = X.pii and B.hlno = X.hlno and A.tokno = B.tokno
+           order by X.pii, X.hlno, A.tokno)
+        to 'failure.tsv' with csv delimiter E'\t';
+  \end{lstlisting}
+\item try to fix the tagging errors
+  \begin{lstlisting}[language=bash]
+    scala -J-Xmx24g  -cp "/home/thierry/lib/*:./fix-errors" Main < analysis/failures.tsv > bar
+  \end{lstlisting}
+\end{enumerate}
+
+  
 \chapter{HOWTOS}
 \section{check list from epfl and update accordingly}
 \begin{enumerate}
@@ -417,9 +634,337 @@ It is implemented in \emph{server.js} file.
   \begin{lstlisting}
     ./extractNewHL ~/HL/data/in/HL/ ~/HL/data/out/parser/ | sort -k 1,1 -u > ~/HL/data/out/PENDING.hughes-2
     ./make.sh ~/HL/data/out/PENDING.hughes-2 2>network/LOGS/make.hughes-2
-  \end{lstlisting}
+  \end{lstlisting}  
 \end{enumerate}
 
+\section{Create samples for experiment 1}
+\subsection{Generated files}
+In the first step:
+\begin{itemize}
+\item sample-meta-proposal.tsv
+\item sample-meta-we-proposal.tsv
+\item sample-meta-study-proposal.tsv
+\item sample-factual-proposal.tsv
+\item sample-simple-proposal.tsv
+\item sample-multi-and-proposal.tsv
+\item sample-multi-notand-proposal.tsv
+\item sample-nontechnical-proposal.tsv
+\item sample-midlytechnical-proposal.tsv
+\item sample-highlytechnical-proposal.tsv
+\end{itemize}
+
+These files where send in a first shot in the form of excel files. A second shot contained the full hl set. This second shot is stored in the \cs{with-hl.d} directory.
+
+\subsection*{Compute statistical features of HLs}
+Use the program updatedb-stats.js to extract the following data:
+\begin{itemize}
+\item pii
+\item hlno
+\item ntokens
+\item nsub
+\item npred
+\item nobj
+\item nunk
+\item nnouns
+\item nconcepts
+\item ndistconc
+\item nverbs
+\item nverbsstrong
+\item nverbsunknown
+\item hl
+\end{itemize}
+This program browses the the predicate directory for the tagged files, and outputs a tab delimited file.
+
+This file is pg-imported in the \cs{hlstatistics}. Extrainfo are added in \cs{hlstatisticsfull}:
+\begin{lstlisting}[language=bash]
+  node --max-old-space-size=24596 updatedb-stats.js > /home/thierry/HL/data/out/hlstats.2
+\end{lstlisting}
+then
+\begin{lstlisting}[language=SQL]
+  drop table if exists hlstatistics;
+  create table hlstatistics (
+       PII char(17),
+       hlno int,
+       ntokens int,
+       nsub int,
+       npred int,
+       nobj int,
+       nunk int,
+       nnouns int,
+       nconcepts int,
+       ndistconc int,
+       nverbs int,
+       nverbsstrong int,
+       nverbsunknown int,
+       hl text);
+
+    \copy hlstatistics from '/home/thierry/HL/data/hlstats.2' with csv delimiter E'\t' quote E'\b' header;
+   alter table hlstatistics add primary key(pii, hlno);
+
+   drop table if exists hlstatisticsfull;
+   create table hlstatisticsfull as (
+     select A.*, B.issn, C.journal_title, D.category
+     from hlstatistics A
+     join articles B on A.pii = B.pii
+     join journals_title C on B.issn = c.issn
+     join journals_categories D on D.issn = B.issn);
+\end{lstlisting}
+We add some statistics about common words. For this we check the presence of the words in an american common dictionary
+\begin{lstlisting}[language=bash]
+  perl ../check-dictionary.pl < ~/HL/data/hlstats.2 > ~/HL/data/hlstats.dicverified
+\end{lstlisting}
+And we pg-import this:
+\begin{lstlisting}[language=SQL]
+  drop table if exists hlstatistics_dic;
+  create table hlstatistics_dic (
+       PII char(17),
+       hlno int,
+       ntokens int,
+       nsub int,
+       npred int,
+       nobj int,
+       nunk int,
+       nnouns int,
+       nconcepts int,
+       ndistconc int,
+       nverbs int,
+       nverbsstrong int,
+       nverbsunknown int,
+       hl text,
+       dicknown int,
+       dicunknown int);
+   \copy hlstatistics_dic from '/home/thierry/HL/data/hlstats.dicverified' with csv delimiter E'\t' quote E'\b' header;
+\end{lstlisting}
+Journals from Cell are set in a table:
+\begin{lstlisting}[language=SQL]
+  drop table if exists celljournals;
+  create table celljournals (
+    issn char(8),
+    journal_title text);
+  \copy celljournals from '/home/thierry/HL/data/cellrolf.txt' with csv delimiter E'\t' quote E'\b';
+\end{lstlisting}
+We create tables specific to Cell:
+\begin{lstlisting}[language=SQL]
+  drop table if exists hlstatisticscell;
+  create table hlstatisticscell as (
+    select A.*
+    from hlstatistics A
+    join articles C on C.pii = A.pii join
+    celljournals B on C.issn = B.issn);
+    
+  alter table hlstatisticscell add column rnd float;
+  update hlstatisticscell set rnd = random ();
+
+  drop table if exists hlstatisticscell_dic;
+  create table hlstatisticscell_dic as (
+    select A.*, dicknown, dicunknown
+    from hlstatisticscell A
+    join hlstatistics_dic B on A.pii = B.pii and A.hlno = B.hlno);
+\end{lstlisting}
+\subsection*{Extractions}
+\subsubsection*{Meta}
+\begin{lstlisting}[language=SQL]
+  \copy (select pii, hlno, hl
+    from hlstatisticscell where nverbsstrong = 1  and nunk > 0 order by rnd)
+  to 'meta.tsv' with csv delimiter E'\t';
+\end{lstlisting}
+We somehow extract terminations in 'ed' that we put in \cs{meta-ends}. Then
+\begin{lstlisting}{language=bash}
+  # WTF ?
+  grep " we " meta.tsv > sample-meta.tsv
+  grep " study " meta.tsv >> sample-meta.tsv
+  perl extract-meta.pl < meta.tsv >> sample-meta.tsv
+\end{lstlisting}
+
+\begin{lstlisting}[language=SQL]
+  \copy (select pii, hlno, hl
+    from hlstatisticscell
+    where hl like 'We %' and nverbsstrong = 1 order by rnd)
+  to 'meta-we.tsv' with csv delimiter E'\t';
+  \copy (select pii, hlno, hl
+    from hlstatisticscell
+    where hl like '% study %' and nverbsstrong < 2 order by rnd)
+  to 'meta-study.tsv' with csv delimiter E'\t';
+
+  drop table if exists sample_meta;
+  create table sample_meta (
+       pii char(17),
+       hlno int,
+       hl text);
+  \copy sample_meta from 'sample-meta.tsv' with csv delimiter E'\t';
+  \copy (select A.*, title, C.journal_title
+    from sample_meta A
+    join articles B on A.pii = B.pii
+    join celljournals C on B.issn = C.issn
+    join hlstatisticscell D on D.pii = A.pii and D.hlno = A.hlno order by D.rnd)
+  to 'sample-meta-proposal.tsv' with csv delimiter E'\t';
+
+  drop table if exists sample;
+  create table sample (
+       pii char(17),
+       hlno int,
+       hl text);
+  \copy sample from 'meta-we.tsv' with csv delimiter E'\t';
+  \copy (select A.*, title, C.journal_title
+    from sample A
+    join articles B on A.pii = B.pii
+    join celljournals C on B.issn = C.issn
+    join hlstatisticscell D on D.pii = A.pii and D.hlno = A.hlno order by D.rnd)
+  to 'sample-meta-we-proposal.tsv' with csv delimiter E'\t';
+
+  drop table if exists sample;
+  create table sample (
+       pii char(17),
+       hlno int,
+       hl text);
+  \copy sample from 'meta-study.tsv' with csv delimiter E'\t';
+  \copy (select A.*, title, C.journal_title
+    from sample A
+    join articles B on A.pii = B.pii
+    join celljournals C on B.issn = C.issn
+    join hlstatisticscell D on D.pii = A.pii and D.hlno = A.hlno order by D.rnd)
+  to 'sample-meta-study-proposal.tsv' with csv delimiter E'\t';
+\end{lstlisting}
+
+\subsubsection*{Factuals}
+\begin{lstlisting}[language=SQL]
+  \copy (select pii, hlno, hl
+     from hlstatisticscell
+     where nunk = 0 and
+     hl not like 'We %' and hl not like '%ed .%' and
+     rnd < 0.01 order by rnd)
+   to 'factual.tsv' with csv delimiter E'\t';
+   -- why exporting and importing ? wtf ?
+   drop table if exists sample;
+   create table sample (
+       pii char(17),
+       hlno int,
+       hl text);
+   \copy sample from 'factual.tsv' with csv delimiter E'\t';
+   \copy (select A.*, title, C.journal_title
+      from sample A
+      join articles B on A.pii = B.pii
+      join celljournals C on B.issn = C.issn
+      join hlstatisticscell D on D.pii = A.pii and D.hlno = A.hlno order by D.rnd)
+    to 'sample-factual-proposal.tsv' with csv delimiter E'\t';
+\end{lstlisting}
+\subsubsection*{Simples}
+\begin{lstlisting}[language=SQL]
+  \copy (select pii, hlno, hl
+     from hlstatisticscell
+     where nunk = 0 and hl not like 'We %' and nverbsstrong = 1 and rnd> 0.98 order by rnd)
+   to 'simple.tsv' with csv delimiter E'\t';
+
+  drop table if exists sample;
+  create table sample (
+       pii char(17),
+       hlno int,
+       hl text);
+  \copy sample from 'simple.tsv' with csv delimiter E'\t';
+  \copy (select A.*, title, C.journal_title
+    from sample A join articles B on A.pii = B.pii
+    join celljournals C on B.issn = C.issn
+    join hlstatisticscell D on D.pii = A.pii and D.hlno = A.hlno order by D.rnd)
+  to 'sample-simple-proposal.tsv' with csv delimiter E'\t';   
+\end{lstlisting}
+
+\subsubsection{Multiples}
+\begin{lstlisting}[language=SQL]
+  \copy (select pii, hlno, hl
+    from hlstatisticscell
+    where nunk = 0 and hl not like 'We %' and hl like '% and %' and nverbsstrong > 2
+    order by ntokens desc, rnd)
+  to multi-and.tsv with csv delimiter E'\t';
+
+  \copy (select pii, hlno, hl
+    from hlstatisticscell
+    where nunk = 0 and hl not like 'We %' and hl not like '% and %' and nverbsstrong > 2
+    order by ntokens desc, rnd)
+  to multi-notand.tsv with csv delimiter E'\t';
+
+  drop table if exists sample;
+  create table sample (
+       pii char(17),
+       hlno int,
+       hl text);
+   \copy sample from 'multi-and.tsv' with csv delimiter E'\t';
+   \copy (select A.*, title, C.journal_title
+         from sample A join articles B on A.pii = B.pii
+         join celljournals C on B.issn = C.issn
+         join hlstatisticscell D on D.pii = A.pii and D.hlno = A.hlno order by D.rnd)
+     to 'sample-multi-and-proposal.tsv' with csv delimiter E'\t';
+
+   drop table if exists sample;
+   create table sample (
+       pii char(17),
+       hlno int,
+       hl text);
+   \copy sample from 'multi-notand.tsv' with csv delimiter E'\t';
+   \copy (select A.*, title, C.journal_title
+     from sample A
+     join articles B on A.pii = B.pii
+     join celljournals C on B.issn = C.issn
+     join hlstatisticscell D on D.pii = A.pii and D.hlno = A.hlno order by D.rnd)
+   to 'sample-multi-notand-proposal.tsv' with csv delimiter E'\t';
+\end{lstlisting}
+
+\subsubsection*{Specialized}
+\begin{lstlisting}[language=SQL]
+  \copy (select pii, hlno, hl
+    from hlstatisticscell_dic
+    where dicunknown::float = 0  and nverbsstrong > 1 and rnd < 0.6 order by rnd)
+  to 'nontechnical.tsv' with csv delimiter E'\t';
+
+  \copy (select pii, hlno, hl
+    from hlstatisticscell_dic
+    where dicunknown::float / dicknown > 1 and ndistconc > 0 and nverbsstrong > 1 order by rnd)
+  to 'highlytechnical.tsv' with csv delimiter E'\t';
+
+  \copy (select pii, hlno, hl
+    from hlstatisticscell_dic
+    where dicunknown::float / dicknown < 0.3 and dicunknown::float / dicknown > 0.2
+      and ndistconc > 0 and nverbsstrong > 1 and rnd < 0.4 order by rnd)
+  to 'midlytechnical.tsv' with csv delimiter E'\t';
+
+  drop table if exists sample;
+  create table sample (
+       pii char(17),
+       hlno int,
+       hl text);
+  \copy sample from 'nontechnical.tsv' with csv delimiter E'\t';
+  \copy (select A.*, title, C.journal_title
+         from sample A
+         join articles B on A.pii = B.pii
+         join celljournals C on B.issn = C.issn
+         join hlstatisticscell D on D.pii = A.pii and D.hlno = A.hlno order by D.rnd)
+  to 'sample-nontechnical-proposal.tsv' with csv delimiter E'\t';
+
+  drop table if exists sample;
+  create table sample (
+       pii char(17),
+       hlno int,
+       hl text);
+  \copy sample from 'midlytechnical.tsv' with csv delimiter E'\t';
+  \copy (select A.*, title, C.journal_title
+    from sample A
+    join articles B on A.pii = B.pii
+    join celljournals C on B.issn = C.issn
+    join hlstatisticscell D on D.pii = A.pii and D.hlno = A.hlno order by D.rnd)
+  to 'sample-midlytechnical-proposal.tsv' with csv delimiter E'\t';
+
+  drop table if exists sample;
+  create table sample (
+       pii char(17),
+       hlno int,
+       hl text);
+  \copy sample from 'highlytechnical.tsv' with csv delimiter E'\t';
+  \copy (select A.*, title, C.journal_title
+    from sample A
+    join articles B on A.pii = B.pii
+    join celljournals C on B.issn = C.issn
+    join hlstatisticscell D on D.pii = A.pii and D.hlno = A.hlno order by D.rnd)
+  to 'sample-highlytechnical-proposal.tsv' with csv delimiter E'\t';
+\end{lstlisting}
 
 \chapter{Tools from the NLM}
 \section{Resources}
