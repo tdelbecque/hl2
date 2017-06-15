@@ -2,14 +2,24 @@ const U = require ('./utils/utils')
 const PG = require ('./utils/pg')
 const A = require ('./utils/async')
 const FS = require ('./utils/fs')
+const CLA = require("command-line-args")
 
 const pagesContentDir = process.env.HLDATADIR + "/out/www-resources"
 const tableName = 'xml_hl'
+const dbName = 'cg'
+
+const claOptions = [
+    { name: "db", type: String, defaultValue: dbName},
+    { name: "table", type: String, defaultValue: tableName},
+    { name: "dir", type: String, defaultValue: pagesContentDir}]
 
 class Process {
-    constructor () {
+    constructor (options) {
+	this.dbName = options.db
+	this.tableName = options.table
+	this.pagesContentDir = options.dir
 	this.Q = []
-	this.client = new PG ('postgres://cg:cg@localhost/cg')
+	this.client = new PG (`postgres://cg:cg@localhost/${this.dbName}`)
 	this.canClose = false
 	this.looping = false
     }
@@ -23,7 +33,7 @@ class Process {
 	    throw 'Cannot connect'
 	}
 	try {
-	    let c = await this.client.query (`select PII from ${tableName}`)
+	    let c = await this.client.query (`select PII from ${this.tableName}`)
 	    this.dic = c.rows.reduce ((a, b) => a.add (b.pii), new Set ())
 	}
 	catch (err) {
@@ -33,9 +43,9 @@ class Process {
     }
     
     async processDir () {
-	const files = (await A.lsdir (pagesContentDir)).
+	const files = (await A.lsdir (this.pagesContentDir)).
 	      filter (x => x.match (/\.xml$/)).
-	      map (x => `${pagesContentDir}/${x}`)
+	      map (x => `${this.pagesContentDir}/${x}`)
 	for (const f of files) {
 	    U.croak (f)
 	    await FS.readLines (f, this)
@@ -57,7 +67,7 @@ class Process {
 	    const m = l.match (/^(S(?:X|\d){16})\t(<div(?:.|\u2028)+div>)$/)
 	    if (m && ! this.dic.has (m [1])) {
 		this.dic.add (m [1])
-		const q = `insert into ${tableName} values ('${m[1]}', '${m[2].replace (/\'/g, "''")}')`
+		const q = `insert into ${this.tableName} values ('${m[1]}', '${m[2].replace (/\'/g, "''")}')`
 	        await this.client.query (q)
 	    }
 	}
@@ -81,7 +91,8 @@ class Process {
 }
 
 async function main () {
-    const p = new Process ()
+    const options = CLA (claOptions)
+    const p = new Process (options)
     try {
 	await p.init ()
 	await p.processDir ()
