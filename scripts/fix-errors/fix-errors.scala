@@ -80,8 +80,7 @@ object Main extends App {
         output (s"""<PAPER PII="${currentPii}">""")
         hlWritten = true
       }
-      //output (s"""<HL rank="${currentHlno}">""")
-      output ("<HL>")
+      output (s"""<HL rank="${currentHlno}">""")
       for (p <- Q) {output (p)}
       output ("</HL>")
       posHasChanged = false
@@ -147,11 +146,15 @@ object Main extends App {
               }
               case _ => pos
             }
-          if (pos != bestPos) posHasChanged = true
-          Q += s"${token}\t${posMap(lemma, bestPos)}"
+          if (pos != bestPos) {
+            posHasChanged = true
+            Q += s"${token}\t${posMap(lemma, bestPos)}"
+          }
+          else
+            Q += s"${token}"
         }
         else
-          Q += s"${token}\t${posMap(lemma, pos)}"
+          Q += s"${token}"
     }
     if (currentHlno != "") closePaper
   }
