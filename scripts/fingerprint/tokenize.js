@@ -6,10 +6,11 @@ const u = require ('../utils/utils')
 
 const croak = u.croak
 
-tokenize = (l, outputFun) => 
-    ` ${l} `.
+tokenize = (l, outputFun) =>
+    ` ${l}. `.
     replace (/\s+/g, ' ').
-    replace (/\.{}/g, '\n...\n').
+    replace (/[!?,;:. ]+$/, '. ').   // force an unique dot at the end
+    replace (/\.{3}/g, '\n...\n').
     replace (/[,;:@#\$%&!?"‘’]/g, '\n$&\n').
     replace (/([^.])([.])([\]\)}>"']*)\s*$/g, '$1\n$2$3\n').
     replace (/[\]\[\(\){}<>]/g, '\n$&\n').
