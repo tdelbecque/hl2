@@ -8,7 +8,7 @@ while (<>) {
 	print "1\t$1\t_\tCD\tCD\t_\t_\t_\n\n";
 	next;
     }
-    if (/<HL>/) {
+    if (/<HL/) {
 	$tokno = 0;
 	next;
     }
