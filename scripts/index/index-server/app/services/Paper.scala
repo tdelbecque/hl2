@@ -1,5 +1,6 @@
 package services
 
+import scala.language.postfixOps
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.Statement
@@ -41,14 +42,26 @@ object PaperLookup {
   Class.forName ("org.postgresql.Driver")
 
   val con: Connection = DriverManager getConnection ("jdbc:postgresql://localhost/cg", "cg", "cg")
+  val conFallback = DriverManager getConnection ("jdbc:postgresql://localhost/cgfallback", "cg", "cg")
 
-  def apply (pii: String) : Option[P] = {
+  def getSomeHL (pii: String, con: Connection) : Option[String] = {
     val stmt: Statement = con createStatement
+    var rs = stmt.executeQuery ("select hl from xml_hl where pii = '" + pii + "'")
+    val ret = if (rs.next ()) Some (rs.getString ("hl")) else None
+    rs.close ()
+    ret
+  }
+
+  def getSomeResultSet (pii: String) : Option[P] = {
+    val hl = getSomeHL (pii, conFallback) orElse getSomeHL (pii, con)
+    val stmt: Statement = con createStatement
+    /*
     var rs = stmt.executeQuery ("select hl from xml_hl where pii = '" + pii + "'")
     if (! rs.next ()) return None
     val hl = rs.getString ("hl")
     rs.close ()
-    rs = stmt executeQuery ("select a.issn, a.title, a.authors, a.abstract, a.volume, a.pages, a.pubtime, coalesce (b.journal_title, '') journal from articles a left outer join journals_title b on a.issn = b.issn  where pii = '" + pii + "'")
+     */
+    val rs = stmt executeQuery ("select a.issn, a.title, a.authors, a.abstract, a.volume, a.pages, a.pubtime, coalesce (b.journal_title, '') journal from articles a left outer join journals_title b on a.issn = b.issn  where pii = '" + pii + "'")
     if (! rs.next ()) return None
     val title = rs.getString("title")
     val journal = rs.getString("journal")
@@ -58,9 +71,11 @@ object PaperLookup {
     val abstract_ = rs.getString("abstract")
     rs.close ()
 
-    Some (P (pii, title, journal, abstract_, volume, pubtime, pages, hl))
+    Some (P (pii, title, journal, abstract_, volume, pubtime, pages, hl get))
   }
 
+  def apply (pii: String) = getSomeResultSet (pii)
+  
   def getAnalysis (pii: String) = {
     val stmt: Statement = con createStatement
     val rs = stmt.executeQuery (s"select data from parsing where pii = '${pii}'")
