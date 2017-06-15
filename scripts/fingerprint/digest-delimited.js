@@ -45,6 +45,7 @@ class Loader {
     }
     
     async load (directory = 'core') {
+	if (directory === 'nil') return
 	const fullDirectory = baseDirectory + directory
 	await A.assertDirectory (fullDirectory)
 	const dirEntries = await A.lsdir (baseDirectory + directory)
