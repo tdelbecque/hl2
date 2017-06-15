@@ -59,7 +59,7 @@ isEndOfPaper :: String -> Bool
 isEndOfPaper x = x =~ "^</PAPER>"
 
 isBeginingOfHL :: String -> Bool
-isBeginingOfHL x = x =~ "^\\s*<HL>\\s*$"
+isBeginingOfHL x = x =~ "^\\s*<HL( [^>]*)?>\\s*$"
                    
 isEndOfHL :: String -> Bool
 isEndOfHL x = x =~ "^\\s*</HL>\\s*$"
