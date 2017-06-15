@@ -34,6 +34,7 @@ TURBOPARSEDTAGGEDFILE=$TURBOPARSEDFILE.tagged
 # Archived produced files:
 # Turbo ependency parsing, as this is costly
 ARCHTURBOPARSEDFILE=$TURBOPARSEDDIR/$ORIGHLBASENAME.pred
+ARCHTTORIGINALFILE=$TURBOPARSEDDIR/$ORIGHLBASENAME.ttorigin
 # with predicate tags
 ARCHTURBOTAGGEDFILE=$PREDICATESDIR/$ORIGHLBASENAME.tagged
 # to be digested by Hung indexing
@@ -90,6 +91,12 @@ $TAGGER -token -sgml -hyphen-heuristics $PARFILE $INPUT4TT |
 
 tostderr "Chunks Tagging"
 $TAGCHUNKS < $CHUNKS | $ADDTOKNO > $CHUNKSTAGGED
+tail -n 1 $CHUNKSTAGGED | perl -ne 'if (m!</PAPER>!) {exit 0} else {exit -1}'
+if test "$?" != "0" ; then
+    tostderr "FAIL IN CHUNCK PROCESSING"  
+    exit -1
+fi
+
 tostderr "Trimming"
 $STRIPHEADING < $CHUNKSTAGGED | $STRIPTERMINATOR > $TELOMERESTRIPPED
 tostderr "Format for Turbo"
@@ -105,6 +112,7 @@ tostderr "Tag 4 Hung"
 ./tags2Hung < $ARCHTURBOTAGGEDFILE > $ARCHPRED2HUNGSFILE
 tostderr "Create xml resources for www"
 perl  prepareHL4Server.pl < $ARCHTURBOTAGGEDFILE > $WWWRESDIR/$ORIGHLBASENAME.xml
+
 tostderr "Update DB"
 $NODECMD updatedb.js
 tostderr "Update DB for www resources"
