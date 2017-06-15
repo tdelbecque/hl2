@@ -14,7 +14,7 @@ while (<>) {
 	print "$pii\t$txt";
 	next;
     }
-    if (/<HL>/) {
+    if (/<HL.*>/) {
 	$txt .= "<dt class=\"label\">&bull;</dt><dd><p>";
 	$previousClass = "";
 	next;
