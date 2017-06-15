@@ -10,7 +10,7 @@ open PATCHFILE, "<$patchFile" or die "$!";
 
 while (<PATCHFILE>) {
     my ($pii) = /PII\s*=\s*"(.+?)"/;
-    last unless $pii;
+    last unless $pii and m!</PAPER>!;
     $D {$pii} = my $data = [];
     my @HL = m!(<HL.+?/HL>)!sg;
     for (@HL) {
