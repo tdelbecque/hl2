@@ -1,7 +1,7 @@
 use strict;
 use diagnostics;
 
-my ($pii, $hlno);
+my ($pii, $hlno, $rank);
 my ($inNode, $node);
 
 my @HL = ();
@@ -21,7 +21,11 @@ sub openVC {
 $" = "\t";
 
 sub output0 {
-    print "<HL>\n";
+    if ($rank) {
+	print "<HL rank=\"$rank\">\n";
+    } else {
+	print "<HL>\n";
+    }
     for (@HL) {
 	if ($_->[0] == 0) {
 	    print "$_->[1]\n";
@@ -98,7 +102,8 @@ while (<>) {
 	$inNode = 0;
 	next;
     }
-    if (/<HL>/) {
+    if (/<HL/) {
+	($rank) = /rank\s*=\s*"(\d+)"/;
 	clear;
 	$hlno ++;
 	next;
