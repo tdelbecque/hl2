@@ -15,25 +15,26 @@ function queryOptions (pii, apikey, token) {
     }
 }
 
-function output (pii, hls, data) {
+function output (pii, hls, data, dir) {
     var sep = ' • '
     var v = hls.join (sep).replace (/\n/g, ' ')
     process.stdout.write (pii + "\t" + sep + v + "\n")
     if (data) 
-	fs.writeFile (`/home/thierry/HL/data/out/pages-xml/${pii}.xml`,
+	fs.writeFile (`${dir}/${pii}.xml`,
 		      data,
 		      {encodng: 'utf8'},
 		      err => {if (err) u.croak (err)})
 }
 
-function F () {
+function F (pageSaveDirectory) {
     var myself = this
     this.piis = []
     this.HL = {}
 
     this.APIKEY = process.env.KG_ELSAPI_APIKEY
     this.APITOKEN = process.env.KG_ELSAPI_TOKEN
-    
+
+    this.pageSaveDirectory = pageSaveDirectory || "/home/thierry/HL/data/out/pages-xml"
     this.innerGet = function (pii) {
 	var req = https.request (queryOptions (pii, myself.APIKEY, myself.APITOKEN),
 				 function (res) {
@@ -73,7 +74,7 @@ function F () {
 						     hls = hls [0].split (/\s*►\s*/).filter (function (x) {return x.length > 0})
 						 //myself.HL [pii] = hls
 						 process.stderr.write (`${pii}\tOK\n`)
-						 output (pii, hls, data)
+						 output (pii, hls, data, myself.pageSaveDirectory)
 					     } else {
 						 //myself.HL [pii] = []
 						 process.stderr.write (`${pii}\tNOT OK`)
