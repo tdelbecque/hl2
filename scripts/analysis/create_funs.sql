@@ -1,4 +1,5 @@
 create or replace function create_F_tables () returns void as $create_F_tables$
+begin
        drop table if exists F3 cascade;
        create  table F3 as (
        	       select count(*) n, pos
@@ -49,10 +50,11 @@ create or replace function create_F_tables () returns void as $create_F_tables$
 	      join F1 on F3.pos = F1.pos
 	      join F2 on F2.pos = F3.pos
 	      join F4 on F1.statbef = F4.statbef and F1.stataft = F4.stataft and F4.token = F2.token);
-$create_F_tables$ language sql;
+end $create_F_tables$ language plpgsql;
 
 create or replace function compute_failures () returns void as $compute_failures$
-    drop table if exists token_ctx_left;
+begin
+    drop table if exists token_ctx_left cascade;
     create table token_ctx_left as (
       select A.gtokno, A.pii, A.hlno, A.tokno, A.klass,
         B.pos posbef, A.pos, B.token tokbef , A.token
@@ -60,7 +62,7 @@ create or replace function compute_failures () returns void as $compute_failures
         left outer join tokens B on A.gtokno = B.gtokno + 1);
     alter table token_ctx_left add primary key (gtokno);
 
-    drop table if exists tokens_ctx1;
+    drop table if exists tokens_ctx1 cascade;
     create table tokens_ctx1 as (
       select A.*,  B.pos posaft, B.token tokaft
       from token_ctx_left A
@@ -75,12 +77,10 @@ create or replace function compute_failures () returns void as $compute_failures
     update tokens_ctx1 set posbef='NIL', tokbef='' where tokbef is null;
     update tokens_ctx1 set posaft='NIL', tokaft='' where tokaft is null;
 
-
-/*
     -- this table is used to take apart analysis according to whether we believe
     --   they are successful or not.
     -- A successful analysis led to a 'predicate', in which case U <> size.
-    drop table if exists success;
+    drop table if exists success cascade;
     create table success as (
       select pii, hlno, count(*) size,
              sum (case when klass='unk' then 1 else 0 end) U,
@@ -108,6 +108,5 @@ create or replace function compute_failures () returns void as $compute_failures
            from bar X
            join  tokens A on A.pii = X.pii and A.hlno = X.hlno
            join  tokens_ctx1 B on B.pii = X.pii and B.hlno = X.hlno and A.tokno = B.tokno);
-*/
-$compute_failures$ language sql;
+end $compute_failures$ language plpgsql;
 
