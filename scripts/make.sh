@@ -15,6 +15,14 @@ OUTDATADIR="$DATADIR/out"
 TURBOPARSEDDIR="$OUTDATADIR/parser"
 PREDICATESDIR="$OUTDATADIR/predicates"
 WWWRESDIR="$OUTDATADIR/www-resources"
+#CMD=$HOME/HL/scripts
+CMD=$WORKDIR/scripts
+CONFIGFILE=$CMD/config
+
+getoption(){
+    XYZ=$(grep "^$1\\b" $CONFIGFILE | perl -ne '/^.+ (.+?) *$/; print "$1"')
+    echo $XYZ
+}
 
 #ORIGHLFILE=$INDATADIR/SD_PII_Highlights.tsv
 #ORIGHLFILE=$HLDIR/HL.1489035601
@@ -44,12 +52,11 @@ TTBIN=$HOME/TreeTagger/bin
 TTCMD=$HOME/TreeTagger/cmd
 TTLIB=$HOME/TreeTagger/lib
 
-CMD=$HOME/HL/scripts
-
 NODECMD="/usr/local/n/versions/node/7.6.0/bin/node --max-old-space-size=24596"
 TOKENIZE="perl $CMD/tokenize.pl"
 #TOKENIZECMD="$TOKENIZE < $FILTEREDHLFILE > $INPUT4TT"
-TOKENIZECMD="$NODECMD $CMD/fingerprint/runTokenize.js $FILTEREDHLFILE > $INPUT4TT"
+TOKENIZECMD="$NODECMD $CMD/fingerprint/runTokenize.js $FILTEREDHLFILE $(getoption "FPEDIR") > $INPUT4TT"
+
 TAGCHUNKS="perl $CMD/tagchunks.pl"
 STRIPHEADING="perl $CMD/strip-heading.pl"
 STRIPTERMINATOR="perl $CMD/strip-terminators.pl"
@@ -113,15 +120,17 @@ tostderr "Tag 4 Hung"
 tostderr "Create xml resources for www"
 perl  prepareHL4Server.pl < $ARCHTURBOTAGGEDFILE > $WWWRESDIR/$ORIGHLBASENAME.xml
 
-tostderr "Update DB"
-$NODECMD updatedb.js
-tostderr "Update DB for www resources"
-$NODECMD updatedb-www-resources.js
-tostderr "Update Data for Hung"
-$NODECMD updatedb-predicates.js
-tostderr "Update Parsing"
-$NODECMD updatedb-parser.js
-tostderr "Rebuilding the index"
-cd index
-make run
+if [ $(getoption "UPDATEDB") == 'y' ]; then
+    tostderr "Update DB"
+    $NODECMD updatedb.js
+    tostderr "Update DB for www resources"
+    $NODECMD updatedb-www-resources.js
+    tostderr "Update Data for Hung"
+    $NODECMD updatedb-predicates.js
+    tostderr "Update Parsing"
+    $NODECMD updatedb-parser.js
+    tostderr "Rebuilding the index"
+    cd index
+    make run
+fi
 tostderr Finished
