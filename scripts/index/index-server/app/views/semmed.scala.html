@@ -1,0 +1,17 @@
+@import services.SemMedPredication
+@import scala.collection.Traversable
+
+@(predications: Traversable[SemMedPredication])
+
+<div class="sodad-semmed-predicates-div-class">
+  @if(predications isEmpty) {
+    No predication for this paper
+  } else {
+    <table class="sodad-semmed-predicates-table-class"><tr><th>Subject</th><th>Predicate</th><th>Object</th></tr>
+    @for(p <- predications) {
+	 <tr><td>@p.subject</td><td>@p.predicate</td><td>@p._object</td></tr>
+    }
+    </table>
+ }
+</div>
+
