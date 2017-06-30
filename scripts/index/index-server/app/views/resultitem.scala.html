@@ -14,10 +14,12 @@
     @defining(s"sodad-terms-vector-id-$pii"){termsVectorDivId =>
     @defining(s"sodad-analysis-id-$pii"){analysisDivId =>
     @defining(s"sodad-abstract-id-$pii"){abstractDivId =>
+    @defining(s"sodad-semmed-id-$pii"){semmedDivId =>
     @defining(s"sodad-explain-btn-id-$pii"){explanationBtnId =>
     @defining(s"sodad-terms-vector-btn-id-$pii"){termsVectorBtnId =>
     @defining(s"sodad-analysis-btn-id-$pii"){analysisBtnId =>
     @defining(s"sodad-abstract-btn-id-$pii"){abstractBtnId =>
+    @defining(s"sodad-semmed-btn-id-$pii"){semmedBtnId => 
     <div class="sodad-list-paper-pii" id="div-paper-@pii">
         <span class="sodad-txt-pii-id"><a href="http://www.sciencedirect.com/science/article/pii/@pii" target="_blank">@pii</a></span>
 	@if(maybePaper.isDefined) {
@@ -25,15 +27,15 @@
 	Explanation button
 	*@
 	@defining(searcher.explain(query, scoreDoc.doc)){explanation =>
-	<span id='@explanationBtnId' class="sodad-tooltip-class" style="cursor: pointer;">
+	<span id='@explanationBtnId' class="sodad-tooltip-class sodad-bracket-btn-class">
 	  [Explain]
 	  <span class="sodad-tooltiptext-class">Shows/Hides weighting scheme for this result item</span>
 	</span>
-	<span id='@termsVectorBtnId' class="sodad-tooltip-class" style="cursor: pointer;">
+	<span id='@termsVectorBtnId' class="sodad-tooltip-class sodad-bracket-btn-class">
 	  [Terms Vectors]
 	  <span class="sodad-tooltiptext-class">Shows/Hides Indexing Terms Vector</span>
 	</span>
-	<span id='@analysisBtnId' class="sodad-tooltip-class" style="cursor: pointer;">
+	<span id='@analysisBtnId' class="sodad-tooltip-class sodad-bracket-btn-class">
 	  [Analysis]
 	  <span class="sodad-tooltiptext-class">Shows/Hides NLP Analysis</span>
 	</span>	
@@ -59,9 +61,13 @@
 	<div class="sodad-list-submit-div">
 	  <form id="hlform-@pii" action="/querylong">
 	    <div class="sodad-list-paper-hls">@Html(p.hl)
-	      <span id="@abstractBtnId" class="sodad-tooltip-class" style="color: blue; cursor: pointer;">Show Abstract<span class="sodad-tooltiptext-class">Shows/Hides the abstract ...</span></span>
+	      <span id="@abstractBtnId" class="sodad-tooltip-class sodad-bracket-btn-class">[Show Abstract]<span class="sodad-tooltiptext-class">Shows/Hides the abstract ...</span></span>
+	      <span id="@semmedBtnId" class="sodad-tooltip-class sodad-bracket-btn-class">[Show SemMed Tagging]<span class="sodad-tooltiptext-class">Shows/Hides SemMed tagging ...</span></span>
 	      <div class="sodad-explanation-class" id="@abstractDivId" style="height: 0px; visibility: hidden;" data-visible="0" data-loaded="0">
 	  ABSTRACT NOT LOADED
+	      </div>
+	      <div class="sodad-explanation-class" id="@semmedDivId" style="height: 0px; visibility: hidden;" data-visible="0" data-loaded="0">
+	  SEMMED DATA NOT LOADED
 	      </div>
 	    </div>
 	    <input id="hidden_@pii" name="papertitle" type="hidden" value="@title"/>
@@ -122,9 +128,10 @@
          fun ('@termsVectorBtnId', '@termsVectorDivId', ['@explanationDivId', '@analysisDivId'], 'termsVector')
          fun ('@analysisBtnId', '@analysisDivId', ['@explanationDivId', '@termsVectorDivId'], 'analysis')
          fun ('@abstractBtnId', '@abstractDivId', [], 'abstract')
+         fun ('@semmedBtnId', '@semmedDivId', [], 'semmedPredications')
       })()    
     </script>
-    }}}}}}}}}}}}
+    }}}}}}}}}}}}}}
 </div>
 <script>
   var undef
