@@ -8,25 +8,35 @@
 tostderr(){ echo "$@" 1>&2; }
 
 WORKDIR="$HLWORKDIR"
-DATADIR="$WORKDIR/data"
-INDATADIR="$DATADIR/in"
-HLDIR="$INDATADIR/HL"
-OUTDATADIR="$DATADIR/out"
-TURBOPARSEDDIR="$OUTDATADIR/parser"
-PREDICATESDIR="$OUTDATADIR/predicates"
-WWWRESDIR="$OUTDATADIR/www-resources"
-#CMD=$HOME/HL/scripts
 CMD=$WORKDIR/scripts
-CONFIGFILE=$CMD/config
+
+if [ "$2" == '' ]; then
+    CONFIGFILE=$CMD/config
+else
+    CONFIGFILE=$CMD/$2
+fi
+
+if [ ! -f $CONFIGFILE ]; then
+    echo "$CONFIGFILE is not a file"
+    exit -1
+fi
 
 getoption(){
     XYZ=$(grep "^$1\\b" $CONFIGFILE | perl -ne '/^.+ (.+?) *$/; print "$1"')
+    if [ "$XYZ" == '' -a "$2" != '' ]; then
+	XYZ=$2
+    fi
     echo $XYZ
 }
 
-#ORIGHLFILE=$INDATADIR/SD_PII_Highlights.tsv
-#ORIGHLFILE=$HLDIR/HL.1489035601
-#ORIGHLFILE=$HLDIR/$1
+DATADIR=$WORKDIR/$(getoption DATADIR data)
+INDATADIR="$DATADIR/in"
+HLDIR="$INDATADIR/HL"
+OUTDATADIR=$DATADIR/$(getoption OUTDATADIR out)
+TURBOPARSEDDIR="$OUTDATADIR/parser"
+PREDICATESDIR="$OUTDATADIR/predicates"
+WWWRESDIR="$OUTDATADIR/www-resources"
+
 ORIGHLFILE=$1
 FILTEREDHLFILE=$OUTDATADIR/filtered-hl
 ORIGHLBASENAME=$(basename $ORIGHLFILE)
@@ -124,7 +134,7 @@ if [ $(getoption "UPDATEDB") == 'y' ]; then
     tostderr "Update DB"
     $NODECMD updatedb.js
     tostderr "Update DB for www resources"
-    $NODECMD updatedb-www-resources.js
+    $NODECMD updatedb-www-resources.js --db $(getoption XMLHLDB cg) --dir $WWWRESDIR
     tostderr "Update Data for Hung"
     $NODECMD updatedb-predicates.js
     tostderr "Update Parsing"
