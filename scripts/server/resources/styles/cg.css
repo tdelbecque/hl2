@@ -48,6 +48,11 @@
     border-bottom: 1px dotted black; /* If you want dots under the hoverable text */
 }
 
+.sodad-bracket-btn-class {
+    color: black;
+    cursor: pointer;
+}
+
 /* Tooltip text */
 .sodad-tooltip-class .sodad-tooltiptext-class {
     visibility: hidden;
@@ -108,3 +113,31 @@
 #sodad-pwd-input-id {
     -webkit-text-security: disc;
 }
+
+.sodad-semmed-predicates-div-class {
+    color: black;
+    margin: 1em;
+}
+
+.sodad-semmed-predicates-table-class {
+    border: solid grey 1px;
+    border-collapse: collapse;
+}
+
+
+
+.sodad-semmed-predicates-table-class th {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.sodad-semmed-predicates-table-class td {
+    text-align: center;
+    padding-left: 1em;
+    padding-right: 1em;
+}
+
+.sodad-semmed-predicates-table-class  tr:nth-child(even) {
+    background-color: #f2f2f2
+}
+
