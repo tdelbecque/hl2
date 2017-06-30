@@ -1,13 +1,12 @@
 package services
 
 import scala.language.postfixOps
-import java.sql.Connection
-import java.sql.DriverManager
-import java.sql.Statement
-import java.sql.ResultSet
 
+import java.sql.{Connection, Statement, ResultSet}
 import scala.io.Source
 import scala.util.matching.Regex
+import scala.collection.mutable.ArrayBuffer
+import utils.{Config, Regular, Patch}
 
 object Paper {
   def getHung (pii: String) : String = PaperLookup.getHung (pii)
@@ -39,11 +38,6 @@ case class P (
   hl: String)
 
 object PaperLookup {
-  Class.forName ("org.postgresql.Driver")
-
-  val con: Connection = DriverManager getConnection ("jdbc:postgresql://localhost/cg", "cg", "cg")
-  val conFallback = DriverManager getConnection ("jdbc:postgresql://localhost/cgfallback", "cg", "cg")
-
   def getSomeHL (pii: String, con: Connection) : Option[String] = {
     val stmt: Statement = con createStatement
     var rs = stmt.executeQuery ("select hl from xml_hl where pii = '" + pii + "'")
@@ -53,14 +47,8 @@ object PaperLookup {
   }
 
   def getSomeResultSet (pii: String) : Option[P] = {
-    val hl = getSomeHL (pii, conFallback) orElse getSomeHL (pii, con)
-    val stmt: Statement = con createStatement
-    /*
-    var rs = stmt.executeQuery ("select hl from xml_hl where pii = '" + pii + "'")
-    if (! rs.next ()) return None
-    val hl = rs.getString ("hl")
-    rs.close ()
-     */
+    val hl = getSomeHL (pii, Patch.con) orElse getSomeHL (pii, Regular.con)
+    val stmt: Statement = Regular.con createStatement
     val rs = stmt executeQuery ("select a.issn, a.title, a.authors, a.abstract, a.volume, a.pages, a.pubtime, coalesce (b.journal_title, '') journal from articles a left outer join journals_title b on a.issn = b.issn  where pii = '" + pii + "'")
     if (! rs.next ()) return None
     val title = rs.getString("title")
@@ -77,7 +65,7 @@ object PaperLookup {
   def apply (pii: String) = getSomeResultSet (pii)
   
   def getAnalysis (pii: String) = {
-    val stmt: Statement = con createStatement
+    val stmt: Statement = Regular.con createStatement
     val rs = stmt.executeQuery (s"select data from parsing where pii = '${pii}'")
     var result = ""
     if (rs.next ()) {
@@ -88,7 +76,7 @@ object PaperLookup {
   }
 
   def getAbstract (pii: String) = {
-    val stmt: Statement = con createStatement
+    val stmt: Statement = Regular.con createStatement
     val rs = stmt.executeQuery (s"select abstract from articles where pii = '${pii}'")
     var result = ""
     if (rs.next ()) {
@@ -98,8 +86,22 @@ object PaperLookup {
     result
   }
 
+  def getSemMed (pii: String) : Traversable[SemMedPredication] = {
+    val stmt: Statement = Regular.con createStatement
+    val rs = stmt.executeQuery (s"select SUBJECT_NAME, OBJECT_NAME, PREDICATE from predications where pii = '${pii}'")
+    val xs = new ArrayBuffer[SemMedPredication]
+    while (rs.next ()) {
+      val subject: String = rs.getString ("subject_name")
+      val _object: String = rs.getString ("object_name")
+      val predicate: String = rs.getString ("predicate")
+      xs += SemMedPredication (subject, _object, predicate)
+    }
+    rs.close ()
+    xs
+  }
+
   def getHung (pii: String) : String = {
-    val stmt: Statement = con createStatement
+    val stmt: Statement = Regular.con createStatement
     val rs = stmt.executeQuery (s"select * from hung_predicates where pii = '${pii}' order by hlno")
     var result: String = ""
     while (rs.next ()) {
