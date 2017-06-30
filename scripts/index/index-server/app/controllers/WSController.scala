@@ -81,6 +81,21 @@ class WSController @Inject() (implicit system: ActorSystem, materializer: Materi
         }
         ret        
       }
+      case "semmedPredications" => {
+        val ret = (msg \ "pii").asOpt[String] match {
+          case Some(pii) => {
+            val predications = PaperLookup.getSemMed (pii)
+            val retJsValue = Json.obj (
+              "pii" -> pii,
+              "divid" -> (msg \ "divid").as[String],
+              "content" -> views.html.semmed (predications).body
+            )
+            Json.stringify (retJsValue)
+          }
+          case _ => "Missing pii"
+        }
+        ret
+      }
       case _ => "" 
     }
   }
