@@ -7,11 +7,35 @@
   @if(predications isEmpty) {
     No predication for this paper
   } else {
-    <table class="sodad-semmed-predicates-table-class"><tr><th>Subject</th><th>Predicate</th><th>Object</th></tr>
-    @for(p <- predications) {
-	 <tr><td>@p.subject</td><td>@p.predicate</td><td>@p._object</td></tr>
-    }
+  <table class="sodad-semmed-predicates-table-class">
+    <col style="width:6%"></col>
+    <col style="width:32%"></col>
+    <col style="width:32%"></col>
+    <col style="width:32%"></col>
+    <tr><th>[+/-]</th><th>Subject</th><th>Predicate</th><th>Object</th></tr>
+      @for(p <- predications) {
+	@defining(s"sodad-semmed-showsource-btn-id-${p.predicationId}"){btnId =>
+	@defining(s"sodad-semmed-source-id-${p.predicationId}"){sourceId=>
+	<tr><td><span id="@btnId" class="sodad-tooltip-class sodad-bracket-btn-class">[+]<span class="sodad-tooltiptext-class">Shows/Hides weighting scheme for this result itemsource sentence of this predication</span></span></td><td>@p.subject</td><td>@p.predicate</td><td>@p._object</td></tr>
+	<tr id="@sourceId" style="display:none;"><td></td><td colspan="3">@p.sentence</td></tr>
+	<script type="sodad-postexec">
+	  (function () {
+	  var b = document.getElementById ("@btnId")
+	  var e = document.getElementById ("@sourceId")
+	  e.style.backgroundColor = "rgb(200,255,200)"
+	  b.onclick=function () {
+	    if (e.style.display !== 'none') {
+	      e.style.display = 'none'
+	      b.textContent = '[+]'
+            } else {
+	      e.style.display = 'table-row'
+              b.textContent = '[-]'
+            }
+	  }
+	  })()
+	</script>
+    }}}
     </table>
- }
+    }
 </div>
 
