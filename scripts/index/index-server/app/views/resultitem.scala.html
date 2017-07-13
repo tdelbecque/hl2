@@ -158,6 +158,9 @@
         if (e) {
           e.dataset.loaded = "1"
           e.innerHTML = x.content
+          var xs = e.querySelectorAll ('script[type="sodad-postexec"]')
+          for (var i = 0; i < xs.length; i ++)
+		eval (xs [i].textContent)
         }
       }
     }
