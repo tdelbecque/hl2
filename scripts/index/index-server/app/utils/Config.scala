@@ -12,8 +12,8 @@ object Config {
   def error = _error
 
   try {
-    config = ConfigFactory.load (configFile)
-    configLabel = config.getString (configLabelKey)
+    config = ConfigFactory load configFile
+    configLabel = config getString configLabelKey
   }
   catch {
     case e: Exception => {
@@ -24,7 +24,12 @@ object Config {
 
   def getStringOrElse (k: String, alt: String) : String =
     try {
-      config.getString (s"sodad.kgws.configSet.${configLabel}.${k}")
+      if (config hasPath k) config getString k
+      else {
+        val k2 = s"sodad.kgws.configSet.${configLabel}.${k}"
+        if (config hasPath k2) config getString k2
+        else alt
+      }
     }
     catch {
       case e: Exception => {
