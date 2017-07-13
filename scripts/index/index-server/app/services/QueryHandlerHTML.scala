@@ -11,9 +11,11 @@ import org.apache.lucene.analysis.Analyzer
 import org.apache.lucene.document.Document
 import org.apache.lucene.search.Explanation
 import services.{P, Paper, PaperLookup}
+import utils.Config
 
 object QueryHandlerHTML {
-  val indexDir = "/home/thierry/tmp/index"
+  val configIndexDirKey = "directories.index"
+  val indexDir = Config.getStringOrElse (configIndexDirKey, "/home/thierry/tmp/index")
 
   def getDirectory (path: String) : Directory =
     FSDirectory open FileSystems.getDefault.getPath(path)
@@ -84,7 +86,10 @@ object QueryHandlerHTML {
       views.html.resultlist (q, 1, "", 0, docs, searcher, query)
     }
     catch {
-      case e: Exception => {views.html.error ("Failure due to the query")}
+      case e: Exception => {
+        Console.err println e.toString ()
+        views.html.error ("Failure due to the query")
+      }
     }    
   }
 
