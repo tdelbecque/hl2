@@ -88,13 +88,16 @@ object PaperLookup {
 
   def getSemMed (pii: String) : Traversable[SemMedPredication] = {
     val stmt: Statement = Regular.con createStatement
-    val rs = stmt.executeQuery (s"select SUBJECT_NAME, OBJECT_NAME, PREDICATE from predications where pii = '${pii}'")
+
+    val rs = stmt.executeQuery (s"select A.PREDICATION_ID, A.SUBJECT_NAME, A.OBJECT_NAME, A.PREDICATE, B.SENTENCE from predications A JOIN sentences B on A.sentence_id = B.sentence_id where A.pii = '${pii}'")
     val xs = new ArrayBuffer[SemMedPredication]
     while (rs.next ()) {
       val subject: String = rs.getString ("subject_name")
       val _object: String = rs.getString ("object_name")
       val predicate: String = rs.getString ("predicate")
-      xs += SemMedPredication (subject, _object, predicate)
+      val sentence: String = rs.getString ("sentence")
+      val predicationId: Int = rs.getInt ("predication_id")
+      xs += SemMedPredication (predicationId, subject, _object, predicate, sentence)
     }
     rs.close ()
     xs
