@@ -1,0 +1,28 @@
+@import io.sodad.annotator.services.AnnotatedSequenceTrait; <!-- -*- mode: text; -*- -->
+
+@(annotatedSequence: AnnotatedSequenceTrait)
+
+<!doctype html>
+<head>
+  <script>
+    var Annotation = {}
+    Annotation.symbolNames = []
+    @for(p <- annotatedSequence.getSymbolIterator) {Annotation.symbolNames.push ('@p');}
+
+    Annotation.items = []
+    var x
+    @for(p <- annotatedSequence.getAnnotatedItemsIterator) {
+      x = {stepIdx: @p.stepIdx, symbols = {}, annotationValue = @p.annotationValue}
+      @for(s <- p.symbols.iterator) {x.symbols [@s._1] = '@s._2';}
+      Annotation.items.push (x)}
+  </script>
+</head>
+<html>
+  <body>
+
+    <table>
+	<tr><th>Position</th><th>@for(p <- annotatedSequence.getSymbolIterator){@p</li>}</th><th>Annotation</th></tr>
+    </table>
+  </body>
+</html>
+
