@@ -135,8 +135,8 @@ if [ $(getoption "UPDATEDB") == 'y' ]; then
     $NODECMD updatedb.js
     tostderr "Update DB for www resources"
     $NODECMD updatedb-www-resources.js --db $(getoption XMLHLDB cg) --dir $WWWRESDIR
-    tostderr "Update Data for Hung"
-    $NODECMD updatedb-predicates.js
+#    tostderr "Update Data for Hung"
+#    $NODECMD updatedb-predicates.js
     tostderr "Update Parsing"
     $NODECMD updatedb-parser.js
     tostderr "Rebuilding the index"
