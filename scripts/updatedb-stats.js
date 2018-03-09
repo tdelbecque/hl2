@@ -57,8 +57,8 @@ class Process {
 	    throw 'Cannot connect'
 	}
 	try {
-	    let c = await this.client.query (`select PII, HLNO from ${tableName}`)
-	    this.dic = c.rows.reduce ((a, b) => a.add (`${b.pii} ${b.hlno}`), new Set ())
+	    //let c = await this.client.query (`select PII, HLNO from ${tableName}`)
+	    //this.dic = c.rows.reduce ((a, b) => a.add (`${b.pii} ${b.hlno}`), new Set ())
 	}
 	catch (err) {
 	    U.croak (`Error while loading dictionary : ${err}`)
