@@ -5,6 +5,7 @@ import services.{ApplicationTimer, AtomicCounter, Counter}
 import play.api.Play.current
 import io.sodad.annotator.services.{
   AnnotationFactory, DBUtils, DBUtilsComponentPostgreSQL}
+import io.sodad.annotator.actors._
 
 /**
  * This class is a Guice module that tells Guice how to bind several
@@ -30,6 +31,9 @@ class Module extends AbstractModule {
     // Ask Guice to create our annotaion factory that is indeed the appli
     // application component
     bind(classOf[AnnotationFactory]).asEagerSingleton()
+    bind(classOf[MainPageActorRegister]).asEagerSingleton
+    bind(classOf[AnnotationParametersActorRegister]).asEagerSingleton
+    bind(classOf[GetAnnotatedSequenceActorRegister]).asEagerSingleton
   }
 
 }
