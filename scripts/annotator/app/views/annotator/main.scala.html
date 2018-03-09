@@ -6,17 +6,115 @@
 <html lang="en">
     <head>
         <title>@title</title>
+	<link rel="stylesheet" href="assets/javascripts/SlickGrid-2.3.7/slick.grid.css" type="text/css"/>
+	<link rel="stylesheet" href="assets/javascripts/SlickGrid-2.3.7/css/smoothness/jquery-ui-1.11.3.custom.css" type="text/css"/>
+	<link rel="stylesheet" href="assets/javascripts/SlickGrid-2.3.7/examples/examples.css" type="text/css"/>
+	<link rel="stylesheet" href="assets/stylesheets/main.css" type="text/css"/>
+	<script src="assets/javascripts/SlickGrid-2.3.7/lib/jquery-1.11.2.min.js"></script>
+	<script src="assets/javascripts/SlickGrid-2.3.7/lib/jquery.event.drag-2.3.0.js"></script>
+	<script src="assets/javascripts/SlickGrid-2.3.7/slick.core.js"></script>
+	<script src="assets/javascripts/SlickGrid-2.3.7/slick.dataview.js"></script>
+	<script src="assets/javascripts/SlickGrid-2.3.7/slick.grid.js"></script>
+
 	<script src="assets/javascripts/annotator/annotator.js"> </script>
 	<script>
-		SODAD.msg.MainPage = "@app.msg.MainPage"
-		window.onload = function () {
-			      SODAD.init (function () {
-			      		 SODAD.send ({what: SODAD.msg.MainPage})})
-			      }
+	  function initAnnotationGrid (parameters, containerId) {
+	    var columns = []
+	    var symbols = parameters.symbols
+	    var annotations = parameters.annotations
+	    for (var i = 0; i < symbols.length; i ++) {
+	      var s = symbols [i]
+	      columns.push ({id: s, name: s, field: s})
+	    }
+	    for (var i = 0; i < annotations.length; i ++) {
+	    	var x = annotations [i]
+		var annotationId = x.name + ":id"
+		var annotationField = x.name + ":field"
+	    	columns.push ({id: annotationId, name: x.name, field: annotationField})
+            }
+	    var dataView = new Slick.Data.DataView()
+	    
+	    dataView.onRowCountChanged.subscribe(function (e, args) {
+      	      grid.updateRowCount();
+      	      grid.render();
+            });
+
+      	    dataView.onRowsChanged.subscribe(function (e, args) {
+              grid.invalidateRows(args.rows);
+              grid.render();
+            });
+	    SODAD.dataView = dataView
+	    var grid = new Slick.Grid (containerId, dataView, columns, {enableColumnReorder: false})
+	    grid.onClick.subscribe (function (x, a) {var i = SODAD.dataView.getItem(a.row); i._annotation_ = "FOO"; SODAD.dataView.updateItem(i.id, i)})
+	  }
+		(function () {
+		   SODAD.currentItemKeys = {}
+		   SODAD.msg.MainPage = "@app.msg.MainPage"
+		   SODAD.msg.AnnotationParameters = "@app.msg.AnnotationParameters"
+		   SODAD.msg.GetAnnotatedSequence = "@app.msg.GetAnnotatedSequence"
+		   
+		   SODAD.messageHandlers [SODAD.msg.AnnotationParameters] = function (load) {
+		     SODAD.annotationParameters = load.data
+		     initAnnotationGrid (SODAD.annotationParameters, "#annotationGrdDivId")
+		     var e = document.getElementById ("error-div-id").textContent = JSON.stringify (data)
+		   }
+
+		   SODAD.messageHandlers [SODAD.msg.GetAnnotatedSequence] = function (load) {
+		     var data = []
+		     for (var i = 0; i < load.data.items.length; i ++) {
+		        var item = load.data.items [i]
+                        var x = item.symbols
+			x._annotation_ = item.annotation
+			x.id = "stepidx_" + item.stepIdx
+			data.push (x)
+		     }
+		     SODAD.dataView.setItems([])
+		     SODAD.dataView.setItems(data)
+		     SODAD.currentItemKeys = load.data.itemKeys
+		     var e = document.getElementById ("error-div-id").textContent = JSON.stringify (load)
+                   }
+		   
+		   var funWhenWSOpen = function () {SODAD.send ({what: SODAD.msg.AnnotationParameters})}
+		   
+		   var funWhenError = function (msg) {
+		     var e = document.getElementById ("error-div-id")
+		     if (e) e.textContent = "Error : " + msg
+		   }
+		   
+		   var funWhenLoadFirst = function () {SODAD.send ({what: SODAD.msg.GetAnnotatedSequence, idx: 0})}
+		   var funWhenReload = function () {SODAD.send ({what: SODAD.msg.GetAnnotatedSequence, itemKeys: SODAD.currentItemKeys})}
+		   var funWhenLoadPrevious = function () {SODAD.send ({what: SODAD.msg.GetAnnotatedSequence, itemKeys: SODAD.currentItemKeys, offset: -1})}
+		   var funWhenLoadNext = function () {SODAD.send ({what: SODAD.msg.GetAnnotatedSequence, itemKeys: SODAD.currentItemKeys, offset: 1})}
+		   
+		   window.onload = function () {
+		      SODAD.init ({onWSOpen: funWhenWSOpen, onError: funWhenError})
+		      document.getElementById ("loadFirst").onclick = funWhenLoadFirst
+		      document.getElementById ("reload").onclick = funWhenReload
+		      document.getElementById ("loadPrevious").onclick = funWhenLoadPrevious
+		      document.getElementById ("loadNext").onclick = funWhenLoadNext
+		      document.getElementById ("clear").onclick = function () {SODAD.dataView .setItems([])}
+		   }
+		})()
 	</script>
     </head>
     <body>
-        <div id="thediv">
+        <div id="mainContainerId">
+	  <div id="headerDivId">
+	    <div id="navDivId", class="navClass">
+	      <span id="loadFirst" class="btn">[ << ]</span>
+	      <span id="loadPrevious" class="btn">[ < ]</span>
+	      <span id="reload" class="btn">[ Reload ]</span>
+	      <span id="loadNext", class="btn">[ > ]</span>
+	      <span id="clear", class="btn">[ 0 ]</span>
+	    </div>
+	    <div id="itemInfoDivId">
+	      
+	    </div>
+	  </div>
+	  <div id="contentDivId">
+	    <div id="annotationGrdDivId" class="annotationGrdDivClass"></div>
+	  </div>
+	  <div id="error-div-id"></div>
 	</div>
     </body>
 </html>
