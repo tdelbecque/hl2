@@ -3,24 +3,38 @@ https = require ('https')
 var undef
 
 function queryOptions (dateLoaded, start, apikey, token) {
+    var UA = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:51.0) Gecko/20100101 Firefox/51.0"
+    //UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.31 (KHTML, like Gecko) Chrome/26.0.1410.43 Safari/537.31"
     var path = '/content/search/index:scidir/?apiKey=' + apikey +
 	'&instToken=' + token + '&count=200&field=pii&httpAccept=application/json'
 
     var query = '&query=dateloaded(' + dateLoaded + ')'
     var startQuery = '&start=' + start
     return {
+	/*
 	headers : {
-	    "user-agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:51.0) Gecko/20100101 Firefox/51.0"
+	    "user-agent": UA
 	},
-	"user-agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:51.0) Gecko/20100101 Firefox/51.0",
+	*/
+	"user-agent": UA,
 	hostname: 'api.elsevier.com',
 	path:path + query + startQuery,
 	method: 'GET'
     }
 }
 
-function whenPageLoaded (data, whenFinished) {
-    var x = JSON.parse (data)
+function whenPageLoaded (data, whenFinished, start) {
+    try {
+	var x = JSON.parse (data)
+    } catch (err) {
+	console.error (`${err}: ${data}`)
+	this.nRetries ++
+	if (this.nRetries <= this.maxRetries)
+	    this.innerGetPage (this.dateLoaded, start, whenFinished)
+	else
+	    whenFinished (this.piis)
+	return
+    }
     if (x ["service-error"] !== undef) {
 	process.stderr.write (x ["service-error"]["status"]["statusText"] + "\n")
 	whenFinished (this.piis)
@@ -40,6 +54,7 @@ function whenPageLoaded (data, whenFinished) {
     
 	var nEntries = sr.entry.length
 	var startIndex = parseInt (sr ['opensearch:startIndex'])
+	startIndex = start
 	newStart = startIndex + nEntries;
     }
     if (newStart < totalResults) 
@@ -58,7 +73,7 @@ function getPage (dateLoaded, start, whenFinished) {
 				    data = data + d
 				})
 				res.on ('end', function () {
-				    myself.whenPageLoaded (data, whenFinished)
+				    myself.whenPageLoaded (data, whenFinished, start)
 				})
 			    })
 
@@ -78,6 +93,8 @@ function getPage (dateLoaded, start, whenFinished) {
 }
 
 function F (dateLoaded, apikey, token) {
+    this.maxRetries = 1000
+    this.nRetries = 0
     this.dateLoaded = dateLoaded
     this.piis = []
     this.apikey = apikey
