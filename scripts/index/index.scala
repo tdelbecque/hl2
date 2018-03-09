@@ -58,7 +58,6 @@ object index extends App {
     verbTokens: ListBuffer [String],
     subjectTokens: ListBuffer [String]
   ) : Document = {
-
     val stmt: Statement = c createStatement
     val rs: ResultSet = stmt executeQuery (s"select data allhl from parsing where pii = '$pii'")
     var allhl : String = null
@@ -114,7 +113,7 @@ object index extends App {
   }
 
   def indexDB {
-    val indexDir = getDirectory (indexDirPath)
+     val indexDir = getDirectory (indexDirPath)
     val defaultAnalyzer : Analyzer = new StandardAnalyzer;
 
     val altAnalyzers : Map [String, Analyzer] = Map ("hl" -> new HighlightAnalyzer ())

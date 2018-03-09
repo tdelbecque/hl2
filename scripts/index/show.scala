@@ -1,7 +1,7 @@
 import scala.language.postfixOps
 import java.io.StringReader
 import org.apache.lucene.analysis.tokenattributes.
-  {CharTermAttribute}
+  {CharTermAttribute, PositionIncrementAttribute}
 import org.apache.lucene.analysis.standard.StandardAnalyzer
 
 object show extends App {
@@ -10,14 +10,16 @@ object show extends App {
 
   val hlAnalyzer = new HighlightAnalyzer
   val stdAnalyzer = new StandardAnalyzer
-  val theAnalyzer = stdAnalyzer
+  val theAnalyzer = hlAnalyzer
 
   def displayTokens (text: String) {
     val stream = theAnalyzer.tokenStream ("hl", new StringReader (text))
     val termAttr = stream.addAttribute (classOf [CharTermAttribute])
+    val posIncrAttr = stream.addAttribute (classOf [PositionIncrementAttribute])
+
     stream.reset ()
     while (stream incrementToken) {
-      Console println termAttr.toString
+      Console println s"${termAttr.toString}\t${posIncrAttr.getPositionIncrement()}"
     }
     stream.end ()
     stream.close ()
@@ -27,5 +29,5 @@ object show extends App {
     displayTokens (text)
   }
 
-  analyze (data (1))
+  analyze (data (0))
 }
