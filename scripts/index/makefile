@@ -1,5 +1,5 @@
 LIBDIR=/home/thierry/lucene/lucene-6.3.0
-CP=.:${LIBDIR}/core/*:${LIBDIR}/queryparser/*:${LIBDIR}/analysis/common/*:/home/thierry/lib/*
+CP=.:./*:${LIBDIR}/core/*:${LIBDIR}/queryparser/*:${LIBDIR}/analysis/common/*:/home/thierry/lib/*
 
 index.class: index.scala HighlightTokenizer.class HighlightTokenStreamFilter.class HighlightAnalyzer.class PartOfSpeechTokenStreamFilter.class
 	scalac -classpath ${CP} $<

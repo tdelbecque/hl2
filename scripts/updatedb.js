@@ -53,7 +53,8 @@ async function main () {
 	      filter (x => ! dic.has (x)).
 	      map (x => `${pagesContentDir}/${x}.xml`)
 	for (const file of filesToInsert) {
-	    const f = await M.extract (file)
+    		const f = await M.extract (file)
+		if (f === undefined) continue
 	    const q = `insert into ${tableName} values ('${e(f.PII)}', '${e(f.Title)}', '${e(f.ISSN)}', '${e(f.Authors)}', '${e(f.Volume)}', '${e(f.PubTime)}', '${e(f.Pages)}', '${e(f.Abstract)}')`
 	    try {
 		await client.query (q)
