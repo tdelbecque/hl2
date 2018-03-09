@@ -6,21 +6,27 @@ window.SODAD = {
     }
 }
 
-SODAD.init = function (whenInitialized) {
-    SODAD.setws (whenInitialized)
+SODAD.init = function (options) {
+    SODAD.setws (options)
 }
-SODAD.setws = function (whenConnected) {
+SODAD.setws = function (options) {
     SODAD.socket = new WebSocket ("ws://" + location.host + "/ws")
     SODAD.socket.onopen = function () {
 	SODAD.socket.onmessage = function (evt) {
-	    var data = evt.data
-	    var messageType = data.what
-	    if (messageType) {
+	    try {
+	      var data = JSON.parse (evt.data)
+	      var messageType = data.what
+	      if (messageType) {
 		var h = SODAD.messageHandlers [messageType]
 		if (h) h (data)
-	    } else {
-		var e = document.getElementById("thediv")
-		e.textContent = "ERROR : " + evt.data
+	      } else {
+		if (options.onError)
+		    options.onError ("Message type missing in " + data)
+	      }
+            }
+	    catch (e) {
+		if (options.onError)
+		    options.onError (e)
 	    }
 	}
 	SODAD.send = function (data) {
@@ -30,7 +36,6 @@ SODAD.setws = function (whenConnected) {
 		    JSON.stringify (data)
 	    )
 	}
-	if (whenConnected) 
-	    whenConnected ()
+	if (options.onWSOpen) options.onWSOpen ()
     }
 }
