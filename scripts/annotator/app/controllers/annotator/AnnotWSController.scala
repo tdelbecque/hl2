@@ -7,33 +7,40 @@ import play.api.libs.streams._
 import akka.actor._
 import akka.stream._
 import io.sodad.annotator.services.{AnnotationFactory, Config}
+import io.sodad.annotator.actors.{Message}
 import play.api.libs.json._
 import play.api.Logger
 
 @Singleton
 class AnnotWSController @Inject() (implicit system: ActorSystem, materializer: Materializer, application: AnnotationFactory) {
   private class MyWebSocketActor(out: ActorRef) extends Actor {
-    def receive = {
+    override def preStart = {
+      Logger info s"prestart, out=${out}"
+    }
+
+    override def postStop = {
+      Logger info "poststop"
+    }
+
+    override def receive : Receive = {
       case msgin: String => {
-        Logger info s"Receiving ${msgin}"
+        Logger info s"Receiving ${msgin} from ${sender}"
         try {
           val decodedMsg = Json parse msgin;
-          val ret: Option[String] = (decodedMsg \ "what") match {
-            case JsDefined(JsString(what)) => {
-              Console.err println s"what = ${what}"
-              if (application msgCanHandle what)
-                application msgHandle (what, decodedMsg)
-              else
-                throw new Exception (s"Cannot handle message ${what}")
-            }
-            case JsDefined (_) => 
+          (decodedMsg \ "what") match {
+            case JsDefined(JsString(what)) =>
+              Logger info  s"what = ${what}"
+              application getActorForQuery what match {
+                case None =>
+                  throw new Exception (s"Cannot handle message ${what}")
+                case Some(actor) =>
+                  actor ! Message(out, decodedMsg)
+              }
+
+            case JsDefined (_) =>
               throw new Exception ("what should be a string")
             case _: JsUndefined =>
               throw new Exception ("what is missing")
-          }
-          ret match {
-            case Some(msg) => out ! msg
-            case None => Unit
           }
         }
         catch {
