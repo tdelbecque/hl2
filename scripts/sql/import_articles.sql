@@ -1,8 +1,8 @@
 drop table if exists articles;
 create table articles (
-       PII char(17),
-       Title text,
-       ISSN char(8),
+       pii char(17),
+       title text,
+       issn char(8),
        authors text,
        volume  text,
        pubtime text,
